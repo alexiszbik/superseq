@@ -38,6 +38,7 @@ public:
     void allNotesOff(VirtualMidiSender& sender);
 
     static Sequence createCMaj7Arpeggio(int barCount = 4);
+    static Sequence createKickSnarePattern(int barCount = 4);
 
 private:
     void sortEvents();

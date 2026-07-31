@@ -103,8 +103,11 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick)
 
 void Sequence::allNotesOff(VirtualMidiSender& sender)
 {
-    for (int note = 0; note < 128; ++note)
-        sender.sendNoteOff(0, static_cast<uint8_t>(note), 0);
+    for (uint8_t channel = 0; channel < 16; ++channel)
+    {
+        for (int note = 0; note < 128; ++note)
+            sender.sendNoteOff(channel, static_cast<uint8_t>(note), 0);
+    }
 }
 
 Sequence Sequence::createCMaj7Arpeggio(int barCount)
@@ -119,6 +122,29 @@ Sequence Sequence::createCMaj7Arpeggio(int barCount)
     {
         const int tick = beat * kTicksPerQuarterNote;
         sequence.addNote(tick, noteDuration, notes[beat % 4], 100);
+    }
+
+    return sequence;
+}
+
+Sequence Sequence::createKickSnarePattern(int barCount)
+{
+    Sequence sequence(barCount, 4, true);
+
+    constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
+    constexpr uint8_t kKickNote = 36;
+    constexpr uint8_t kSnareNote = 37;
+    constexpr int kHitDuration = 10;
+
+    const int beatCount = sequence.barCount() * sequence.beatsPerBar();
+
+    for (int beat = 0; beat < beatCount; ++beat)
+    {
+        const int tick = beat * kTicksPerQuarterNote;
+        const bool isKickBeat = (beat % 4) == 0 || (beat % 4) == 2;
+        const uint8_t note = isKickBeat ? kKickNote : kSnareNote;
+
+        sequence.addNote(tick, kHitDuration, note, 127, kDrumChannel);
     }
 
     return sequence;
