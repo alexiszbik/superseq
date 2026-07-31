@@ -1,6 +1,5 @@
 #include "MidiClock.h"
 #include "Sequence.h"
-#include "SequencePool.h"
 #include "VirtualMidiSender.h"
 
 #include <csignal>
@@ -47,6 +46,72 @@ bool trySetTempo(MidiClock& clock, const std::string& argument)
 
     return true;
 }
+
+void printTracks(const Sequence& sequence)
+{
+    for (std::size_t i = 0; i < sequence.trackCount(); ++i)
+    {
+        const SequenceTrack& track = sequence.track(i);
+        std::cout << "  [" << i << "] " << track.name()
+                  << (track.isMuted() ? " (muted)" : "") << "\n";
+    }
+}
+
+bool tryMuteTrack(Sequence& sequence, VirtualMidiSender& sender, const std::string& argument)
+{
+    if (argument.empty())
+    {
+        std::cout << "Tracks:\n";
+        printTracks(sequence);
+        std::cout << "Usage: m <index>  |  m <index> on/off\n";
+        return true;
+    }
+
+    std::istringstream stream(argument);
+    std::size_t index = 0;
+    stream >> index;
+
+    if (stream.fail())
+    {
+        std::cout << "Invalid track index. Example: m 0\n";
+        return true;
+    }
+
+    if (index >= sequence.trackCount())
+    {
+        std::cout << "Track index out of range (0-" << sequence.trackCount() - 1 << ")\n";
+        return true;
+    }
+
+    std::string state;
+    stream >> state;
+
+    if (stream.fail())
+    {
+        const bool muted = !sequence.track(index).isMuted();
+        sequence.setTrackMuted(index, muted, sender);
+        std::cout << "Track [" << index << "] " << sequence.track(index).name()
+                  << (muted ? " muted\n" : " unmuted\n");
+        return true;
+    }
+
+    if (state == "on" || state == "mute")
+    {
+        sequence.setTrackMuted(index, true, sender);
+        std::cout << "Track [" << index << "] " << sequence.track(index).name() << " muted\n";
+    }
+    else if (state == "off" || state == "unmute")
+    {
+        sequence.setTrackMuted(index, false, sender);
+        std::cout << "Track [" << index << "] " << sequence.track(index).name() << " unmuted\n";
+    }
+    else
+    {
+        std::cout << "Invalid mute state. Use on/off. Example: m 0 off\n";
+    }
+
+    return true;
+}
 } // namespace
 
 int main()
@@ -60,27 +125,27 @@ int main()
     {
         VirtualMidiSender sender(kPortName);
         MidiClock clock(sender);
-        SequencePool pool;
-
-        pool.add(Sequence::createCMaj7Arpeggio(4));
-        pool.add(Sequence::createKickSnarePattern(4));
+        Sequence sequence = Sequence::createDemo(4);
 
         clock.setBpm(kDefaultBpm);
 
-        clock.setOnPlay([&pool]() {
-            pool.reset();
+        clock.setOnPlay([&sequence]() {
+            sequence.reset();
         });
 
-        clock.setOnTick([&pool, &sender](int tick) {
-            pool.processTick(sender, tick);
+        clock.setOnTick([&sequence, &sender](int tick) {
+            sequence.processTick(sender, tick);
         });
 
-        clock.setOnStop([&pool, &sender]() {
-            pool.allNotesOff(sender);
+        clock.setOnStop([&sequence, &sender]() {
+            sequence.allNotesOff(sender);
         });
 
-        std::cout << "Loaded " << pool.size() << " sequences (Cmaj7 arpeggio + kick/snare)\n";
-        std::cout << "Commands: [p]lay  [s]top  [t]empo <bpm>  [q]uit\n";
+        std::cout << "Loaded sequence: " << sequence.barCount() << " bars, "
+                  << sequence.trackCount() << " tracks\n";
+        printTracks(sequence);
+
+        std::cout << "Commands: [p]lay  [s]top  [t]empo <bpm>  [m]ute <index>  [q]uit\n";
 
         while (gKeepRunning)
         {
@@ -102,8 +167,15 @@ int main()
                 const auto space = command.find(' ');
                 trySetTempo(clock, command.substr(space + 1));
             }
+            else if (command == "m" || command == "mute")
+                tryMuteTrack(sequence, sender, "");
+            else if (command.rfind("m ", 0) == 0 || command.rfind("mute ", 0) == 0)
+            {
+                const auto space = command.find(' ');
+                tryMuteTrack(sequence, sender, command.substr(space + 1));
+            }
             else if (!command.empty())
-                std::cout << "Unknown command. Use p/s/t/q.\n";
+                std::cout << "Unknown command. Use p/s/t/m/q.\n";
         }
 
         clock.stop();

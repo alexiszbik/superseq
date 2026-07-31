@@ -20,7 +20,7 @@ add_executable(ProtoSeq
     src/main.cpp
     src/MidiClock.cpp
     src/Sequence.cpp
-    src/SequencePool.cpp
+    src/SequenceTrack.cpp
     src/VirtualMidiSender.cpp
 )
 

@@ -1,7 +1,12 @@
 #include "Sequence.h"
 
-#include <algorithm>
 #include <stdexcept>
+#include <utility>
+
+namespace
+{
+constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
+} // namespace
 
 Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int beatDuration)
     : barCount_(barCount)
@@ -16,6 +21,10 @@ Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int beatDuration)
     if (beatsPerBar_ <= 0) {
         throw std::invalid_argument("Sequence beats per bar must be positive");
     }
+
+    if (beatDuration_ <= 0) {
+        throw std::invalid_argument("Sequence beat duration must be positive");
+    }
 }
 
 int Sequence::lengthInTicks() const noexcept
@@ -23,45 +32,36 @@ int Sequence::lengthInTicks() const noexcept
     return barCount_ * beatsPerBar_ * beatDuration_;
 }
 
-void Sequence::addNote(
-    int startTick,
-    int durationTicks,
-    uint8_t note,
-    uint8_t velocity,
-    uint8_t channel)
+void Sequence::addTrack(SequenceTrack track)
 {
-    if (startTick < 0 || durationTicks <= 0)
-        throw std::invalid_argument("Invalid note timing");
-
-    addEvent({ startTick, channel, note, velocity, true });
-    addEvent({ startTick + durationTicks, channel, note, 0, false });
+    tracks_.push_back(std::move(track));
 }
 
-void Sequence::addEvent(const Event& event)
+void Sequence::clearTracks()
 {
-    if (event.tick < 0 || event.tick >= lengthInTicks())
-    {
-        throw std::out_of_range(
-            "Event tick " + std::to_string(event.tick) + " is outside sequence length "
-            + std::to_string(lengthInTicks()));
-    }
-
-    events_.push_back(event);
-    sortEvents();
+    tracks_.clear();
 }
 
-void Sequence::sortEvents()
+SequenceTrack& Sequence::track(std::size_t index)
 {
-    std::sort(events_.begin(), events_.end(), [](const Event& a, const Event& b) {
-        if (a.tick != b.tick)
-            return a.tick < b.tick;
-        return a.noteOn && !b.noteOn;
-    });
+    return tracks_.at(index);
+}
+
+const SequenceTrack& Sequence::track(std::size_t index) const
+{
+    return tracks_.at(index);
+}
+
+void Sequence::setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& sender)
+{
+    tracks_.at(index).setMuted(muted, sender);
 }
 
 void Sequence::reset()
 {
-    nextEventIndex_ = 0;
+    for (SequenceTrack& track : tracks_) {
+        track.reset();
+    }
 }
 
 void Sequence::processTick(VirtualMidiSender& sender, int tick)
@@ -76,28 +76,10 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick)
     }
 
     const int position = looping_ ? (tick % length) : tick;
+    const bool loopWrap = looping_ && position == 0 && tick > 0;
 
-    if (position == 0 && tick > 0) {
-        nextEventIndex_ = 0;
-    }
- 
-    //Lookinf for next event
-    while (nextEventIndex_ < events_.size() && events_[nextEventIndex_].tick < position) {
-        ++nextEventIndex_;
-    }
-
-    while (nextEventIndex_ < events_.size() && events_[nextEventIndex_].tick == position)
-    {
-        const Event& event = events_[nextEventIndex_];
-
-        if (event.noteOn) {
-            sender.sendNoteOn(event.channel, event.note, event.velocity);
-        }
-        else {
-            sender.sendNoteOff(event.channel, event.note, 0);
-        }
-
-        ++nextEventIndex_;
+    for (SequenceTrack& track : tracks_) {
+        track.processTick(sender, position, loopWrap);
     }
 }
 
@@ -105,47 +87,61 @@ void Sequence::allNotesOff(VirtualMidiSender& sender)
 {
     for (uint8_t channel = 0; channel < 16; ++channel)
     {
-        for (int note = 0; note < 128; ++note)
+        for (int note = 0; note < 128; ++note) {
             sender.sendNoteOff(channel, static_cast<uint8_t>(note), 0);
+        }
     }
 }
 
-Sequence Sequence::createCMaj7Arpeggio(int barCount)
-{
-    Sequence sequence(barCount, 4, true);
+// --- test factory func
 
-    const uint8_t notes[] = { 60, 64, 67, 71 }; // C E G B
-    const int beatCount = sequence.barCount() * sequence.beatsPerBar();
-    const int noteDuration = kTicksPerQuarterNote - 2;
+SequenceTrack Sequence::createCMaj7Track(int lengthInTicks, int beatDuration)
+{
+    SequenceTrack track("Cmaj7 Arpeggio");
+
+    const uint8_t notes[] = { 60, 64, 67, 71 };
+    const int beatCount = lengthInTicks / beatDuration;
+    const int noteDuration = beatDuration - 2;
 
     for (int beat = 0; beat < beatCount; ++beat)
     {
-        const int tick = beat * kTicksPerQuarterNote;
-        sequence.addNote(tick, noteDuration, notes[beat % 4], 100);
+        const int tick = beat * beatDuration;
+        track.addNote(tick, noteDuration, notes[beat % 4], 100, 0, lengthInTicks);
     }
 
-    return sequence;
+    return track;
 }
 
-Sequence Sequence::createKickSnarePattern(int barCount)
+SequenceTrack Sequence::createKickSnareTrack(int lengthInTicks, int beatDuration)
 {
-    Sequence sequence(barCount, 4, true);
+    SequenceTrack track("Kick/Snare");
 
-    constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
     constexpr uint8_t kKickNote = 36;
     constexpr uint8_t kSnareNote = 37;
     constexpr int kHitDuration = 10;
 
-    const int beatCount = sequence.barCount() * sequence.beatsPerBar();
+    const int beatCount = lengthInTicks / beatDuration;
 
     for (int beat = 0; beat < beatCount; ++beat)
     {
-        const int tick = beat * kTicksPerQuarterNote;
+        const int tick = beat * beatDuration;
         const bool isKickBeat = (beat % 4) == 0 || (beat % 4) == 2;
         const uint8_t note = isKickBeat ? kKickNote : kSnareNote;
 
-        sequence.addNote(tick, kHitDuration, note, 127, kDrumChannel);
+        track.addNote(tick, kHitDuration, note, 127, kDrumChannel, lengthInTicks);
     }
+
+    return track;
+}
+
+Sequence Sequence::createDemo(int barCount)
+{
+    Sequence sequence(barCount, 4, true);
+    const int length = sequence.lengthInTicks();
+    const int beatDuration = sequence.beatDuration();
+
+    sequence.addTrack(createCMaj7Track(length, beatDuration));
+    sequence.addTrack(createKickSnareTrack(length, beatDuration));
 
     return sequence;
 }

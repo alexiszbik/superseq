@@ -1,8 +1,9 @@
 #pragma once
 
+#include "SequenceTrack.h"
 #include "VirtualMidiSender.h"
 
-#include <cstdint>
+#include <cstddef>
 #include <vector>
 
 class Sequence
@@ -10,44 +11,40 @@ class Sequence
 public:
     static constexpr int kTicksPerQuarterNote = 24;
 
-    struct Event
-    {
-        int tick = 0;
-        uint8_t channel = 0;
-        uint8_t note = 0;
-        uint8_t velocity = 0;
-        bool noteOn = true;
-    };
-
     Sequence(int barCount, int beatsPerBar = 4, bool loop = true, int beatDuration = kTicksPerQuarterNote);
 
     int barCount() const noexcept { return barCount_; }
     int beatsPerBar() const noexcept { return beatsPerBar_; }
+    int beatDuration() const noexcept { return beatDuration_; }
     bool isLooping() const noexcept { return looping_; }
 
     void setLooping(bool loop) noexcept { looping_ = loop; }
 
     int lengthInTicks() const noexcept;
-    const std::vector<Event>& events() const noexcept { return events_; }
 
-    void addNote(int startTick, int durationTicks, uint8_t note, uint8_t velocity, uint8_t channel = 0);
-    void addEvent(const Event& event);
+    void addTrack(SequenceTrack track);
+    void clearTracks();
+
+    std::size_t trackCount() const noexcept { return tracks_.size(); }
+    SequenceTrack& track(std::size_t index);
+    const SequenceTrack& track(std::size_t index) const;
+
+    void setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& sender);
 
     void reset();
     void processTick(VirtualMidiSender& sender, int tick);
     void allNotesOff(VirtualMidiSender& sender);
 
-    static Sequence createCMaj7Arpeggio(int barCount = 4);
-    static Sequence createKickSnarePattern(int barCount = 4);
+    static Sequence createDemo(int barCount = 4);
 
 private:
-    void sortEvents();
+    static SequenceTrack createCMaj7Track(int lengthInTicks, int beatDuration);
+    static SequenceTrack createKickSnareTrack(int lengthInTicks, int beatDuration);
 
     int barCount_;
     int beatsPerBar_;
     bool looping_;
     int beatDuration_;
 
-    std::vector<Event> events_;
-    std::size_t nextEventIndex_ = 0;
+    std::vector<SequenceTrack> tracks_;
 };
