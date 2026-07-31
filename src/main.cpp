@@ -1,4 +1,5 @@
 #include "MidiClock.h"
+#include "Sequence.h"
 #include "VirtualMidiSender.h"
 
 #include <csignal>
@@ -58,9 +59,25 @@ int main()
     {
         VirtualMidiSender sender(kPortName);
         MidiClock clock(sender);
+        Sequence sequence = Sequence::createCMaj7Arpeggio(4);
 
         clock.setBpm(kDefaultBpm);
 
+        clock.setOnPlay([&sequence]() {
+            sequence.reset();
+        });
+
+        clock.setOnTick([&sequence, &sender](int tick) {
+            sequence.processTick(sender, tick);
+        });
+
+        clock.setOnStop([&sequence, &sender]() {
+            sequence.allNotesOff(sender);
+        });
+
+        std::cout << "Loaded Cmaj7 arpeggio: " << sequence.barCount() << " bars, "
+                  << sequence.lengthInTicks() << " ticks, "
+                  << (sequence.isLooping() ? "looping" : "one-shot") << "\n";
         std::cout << "Commands: [p]lay  [s]top  [t]empo <bpm>  [q]uit\n";
 
         while (gKeepRunning)

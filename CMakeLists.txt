@@ -19,6 +19,7 @@ FetchContent_MakeAvailable(rtmidi)
 add_executable(ProtoSeq
     src/main.cpp
     src/MidiClock.cpp
+    src/Sequence.cpp
     src/VirtualMidiSender.cpp
 )
 

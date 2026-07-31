@@ -44,10 +44,39 @@ double MidiClock::bpm() const
     return bpm_;
 }
 
+void MidiClock::setOnPlay(TransportCallback callback)
+{
+    std::lock_guard lock(mutex_);
+    onPlay_ = std::move(callback);
+}
+
+void MidiClock::setOnStop(TransportCallback callback)
+{
+    std::lock_guard lock(mutex_);
+    onStop_ = std::move(callback);
+}
+
+void MidiClock::setOnTick(TickCallback callback)
+{
+    std::lock_guard lock(mutex_);
+    onTick_ = std::move(callback);
+}
+
 void MidiClock::play()
 {
     if (playing_.exchange(true))
         return;
+
+    currentTick_.store(0);
+
+    TransportCallback onPlay;
+    {
+        std::lock_guard lock(mutex_);
+        onPlay = onPlay_;
+    }
+
+    if (onPlay)
+        onPlay();
 
     sender_.sendStart();
     cv_.notify_one();
@@ -61,6 +90,16 @@ void MidiClock::stop()
         return;
 
     sender_.sendStop();
+
+    TransportCallback onStop;
+    {
+        std::lock_guard lock(mutex_);
+        onStop = onStop_;
+    }
+
+    if (onStop)
+        onStop();
+
     cv_.notify_one();
 
     std::cout << "MIDI clock stopped\n";
@@ -91,7 +130,19 @@ void MidiClock::run()
 
         while (playing_.load())
         {
+            const int tick = currentTick_.load();
+
+            TickCallback onTick;
+            {
+                std::lock_guard lock(mutex_);
+                onTick = onTick_;
+            }
+
+            if (onTick)
+                onTick(tick);
+
             sender_.sendClock();
+            currentTick_.store(tick + 1);
 
             nextTick += tickInterval();
             std::this_thread::sleep_until(nextTick);
