@@ -26,14 +26,24 @@ VirtualMidiSender::~VirtualMidiSender()
         midiOut_.closePort();
 }
 
-void VirtualMidiSender::sendNoteOn(uint8_t channel, uint8_t note, uint8_t velocity)
+void VirtualMidiSender::sendClock()
 {
-    sendMessage({ static_cast<uint8_t>(0x90 | (channel & 0x0F)), note, velocity });
+    sendRealtime(0xF8);
 }
 
-void VirtualMidiSender::sendNoteOff(uint8_t channel, uint8_t note, uint8_t velocity)
+void VirtualMidiSender::sendStart()
 {
-    sendMessage({ static_cast<uint8_t>(0x80 | (channel & 0x0F)), note, velocity });
+    sendRealtime(0xFA);
+}
+
+void VirtualMidiSender::sendStop()
+{
+    sendRealtime(0xFC);
+}
+
+void VirtualMidiSender::sendRealtime(uint8_t status)
+{
+    sendMessage({ status });
 }
 
 void VirtualMidiSender::sendMessage(const std::vector<uint8_t>& message)

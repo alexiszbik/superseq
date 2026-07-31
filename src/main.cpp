@@ -1,11 +1,10 @@
+#include "MidiClock.h"
 #include "VirtualMidiSender.h"
 
-#include <chrono>
 #include <csignal>
-#include <cstdint>
 #include <iostream>
-#include <thread>
-#include <vector>
+#include <sstream>
+#include <string>
 
 namespace
 {
@@ -16,15 +15,35 @@ void handleSignal(int)
     gKeepRunning = 0;
 }
 
-const char* noteName(uint8_t note)
+bool trySetTempo(MidiClock& clock, const std::string& argument)
 {
-    static const char* names[] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-    return names[note % 12];
-}
+    if (argument.empty())
+    {
+        std::cout << "Current tempo: " << clock.bpm() << " BPM\n";
+        return true;
+    }
 
-int noteOctave(uint8_t note)
-{
-    return static_cast<int>(note / 12) - 1;
+    std::istringstream stream(argument);
+    double bpm = 0.0;
+    stream >> bpm;
+
+    if (stream.fail() || !stream.eof())
+    {
+        std::cout << "Invalid tempo. Example: t 128\n";
+        return true;
+    }
+
+    try
+    {
+        clock.setBpm(bpm);
+        std::cout << "Tempo set to " << clock.bpm() << " BPM\n";
+    }
+    catch (const std::exception& error)
+    {
+        std::cout << error.what() << '\n';
+    }
+
+    return true;
 }
 } // namespace
 
@@ -33,38 +52,43 @@ int main()
     std::signal(SIGINT, handleSignal);
 
     constexpr auto kPortName = "ProtoSeq Virtual";
-    constexpr auto kInterval = std::chrono::milliseconds(500);
-    constexpr uint8_t kChannel = 0;
-    constexpr uint8_t kVelocity = 100;
-    constexpr uint8_t kNoteDurationMs = 200;
-
-    const std::vector<uint8_t> sequence = { 60, 62, 64, 65, 67, 69, 71, 72 }; // C major scale
+    constexpr double kDefaultBpm = 120.0;
 
     try
     {
         VirtualMidiSender sender(kPortName);
+        MidiClock clock(sender);
 
-        std::cout << "Sending notes every " << kInterval.count() << " ms. Press Ctrl+C to stop.\n";
+        clock.setBpm(kDefaultBpm);
 
-        std::size_t index = 0;
+        std::cout << "Commands: [p]lay  [s]top  [t]empo <bpm>  [q]uit\n";
 
         while (gKeepRunning)
         {
-            const uint8_t note = sequence[index % sequence.size()];
-            ++index;
+            std::cout << "> ";
+            std::string command;
+            if (!std::getline(std::cin, command))
+                break;
 
-            sender.sendNoteOn(kChannel, note, kVelocity);
-            std::cout << "Note ON  " << noteName(note) << noteOctave(note)
-                      << " (midi " << static_cast<int>(note) << ")\n";
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(kNoteDurationMs));
-            sender.sendNoteOff(kChannel, note, kVelocity);
-            std::cout << "Note OFF " << noteName(note) << noteOctave(note) << "\n";
-
-            std::this_thread::sleep_for(kInterval - std::chrono::milliseconds(kNoteDurationMs));
+            if (command == "p" || command == "play")
+                clock.play();
+            else if (command == "s" || command == "stop")
+                clock.stop();
+            else if (command == "q" || command == "quit")
+                break;
+            else if (command == "t" || command == "tempo" || command == "bpm")
+                trySetTempo(clock, "");
+            else if (command.rfind("t ", 0) == 0 || command.rfind("tempo ", 0) == 0 || command.rfind("bpm ", 0) == 0)
+            {
+                const auto space = command.find(' ');
+                trySetTempo(clock, command.substr(space + 1));
+            }
+            else if (!command.empty())
+                std::cout << "Unknown command. Use p/s/t/q.\n";
         }
 
-        std::cout << "Stopped.\n";
+        clock.stop();
+        std::cout << "Bye.\n";
     }
     catch (const std::exception& error)
     {
