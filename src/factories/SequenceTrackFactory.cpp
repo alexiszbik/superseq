@@ -213,7 +213,7 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
 
     for (int bar = 0; bar < barCount; ++bar)
     {
-        const int tick = bar * ticksPerBar;
+        const int tick = bar * ticksPerBar + 48;
         const uint8_t root = barRoots[bar % 4];
 
         track.addNote(tick, chordDuration, root, 70, 0);

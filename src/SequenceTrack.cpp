@@ -20,35 +20,20 @@ void SequenceTrack::addNote(
         throw std::invalid_argument("Invalid note timing");
     }
 
-    addEvent({ startTick, channel, note, velocity, true });
-    addEvent({ startTick + durationTicks, channel, note, 0, false });
+    notes_.push_back({ startTick, durationTicks, channel, note, velocity });
+    sortNotes();
 }
 
-void SequenceTrack::addEvent(const Event& event)
+void SequenceTrack::sortNotes()
 {
-    if (event.tick < 0)
-    {
-        throw std::out_of_range("Event tick cannot be negative");
-    }
-
-    events_.push_back(event);
-    sortEvents();
-}
-
-void SequenceTrack::sortEvents()
-{
-    std::sort(events_.begin(), events_.end(), [](const Event& a, const Event& b) {
-        if (a.tick != b.tick) {
-            return a.tick < b.tick;
-        }
-
-        return a.noteOn && !b.noteOn;
+    std::sort(notes_.begin(), notes_.end(), [](const Note& a, const Note& b) {
+        return a.tick < b.tick;
     });
 }
 
 void SequenceTrack::reset()
 {
-    nextEventIndex_ = 0;
+    nextNoteIndex_ = 0;
     activeNotes_.clear();
     muted_ = startMuted_;
 }
@@ -66,36 +51,34 @@ void SequenceTrack::setMuted(bool muted, VirtualMidiSender& sender)
     }
 }
 
-void SequenceTrack::sendNoteOn(VirtualMidiSender& sender, const Event& event)
+void SequenceTrack::startNote(VirtualMidiSender& sender, const Note& note)
 {
-    sender.sendNoteOn(event.channel, event.note, event.velocity);
-    activeNotes_.push_back({ event.channel, event.note });
+    sender.sendNoteOn(note.channel, note.note, note.velocity);
+    activeNotes_.push_back({ note.channel, note.note, note.durationTicks });
 }
 
-void SequenceTrack::sendNoteOff(VirtualMidiSender& sender, const Event& event)
+void SequenceTrack::tickActiveNotes(VirtualMidiSender& sender)
 {
-    sender.sendNoteOff(event.channel, event.note, 0);
-    removeActiveNote(event.channel, event.note);
+    for (auto it = activeNotes_.begin(); it != activeNotes_.end();)
+    {
+        --it->remainingTicks;
+
+        if (it->remainingTicks <= 0) {
+            sender.sendNoteOff(it->channel, it->note, 0);
+            it = activeNotes_.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }
 
 void SequenceTrack::releaseActiveNotes(VirtualMidiSender& sender)
 {
-    for (const ActiveNote& activeNote : activeNotes_)
+    for (const ActiveNote& activeNote : activeNotes_) {
         sender.sendNoteOff(activeNote.channel, activeNote.note, 0);
+    }
 
     activeNotes_.clear();
-}
-
-void SequenceTrack::removeActiveNote(uint8_t channel, uint8_t note)
-{
-    for (auto it = activeNotes_.begin(); it != activeNotes_.end(); ++it)
-    {
-        if (it->channel == channel && it->note == note)
-        {
-            activeNotes_.erase(it);
-            return;
-        }
-    }
 }
 
 void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool loopWrap)
@@ -105,24 +88,18 @@ void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool lo
     }
 
     if (loopWrap) {
-        nextEventIndex_ = 0;
+        nextNoteIndex_ = 0;
     }
 
-    while (nextEventIndex_ < events_.size() && events_[nextEventIndex_].tick < position) {
-        ++nextEventIndex_;
+    while (nextNoteIndex_ < notes_.size() && notes_[nextNoteIndex_].tick < position) {
+        ++nextNoteIndex_;
     }
 
-    while (nextEventIndex_ < events_.size() && events_[nextEventIndex_].tick == position)
+    while (nextNoteIndex_ < notes_.size() && notes_[nextNoteIndex_].tick == position)
     {
-        const Event& event = events_[nextEventIndex_];
-
-        if (event.noteOn) {
-            sendNoteOn(sender, event);
-        }
-        else {
-            sendNoteOff(sender, event);
-        }
-
-        ++nextEventIndex_;
+        startNote(sender, notes_[nextNoteIndex_]);
+        ++nextNoteIndex_;
     }
+
+    tickActiveNotes(sender);
 }
