@@ -1,5 +1,6 @@
 #include "MidiClock.h"
 #include "Sequence.h"
+#include "TransportPosition.h"
 #include "VirtualMidiSender.h"
 
 #include <csignal>
@@ -112,6 +113,29 @@ bool tryMuteTrack(Sequence& sequence, VirtualMidiSender& sender, const std::stri
 
     return true;
 }
+
+void printPosition(const Sequence& sequence)
+{
+    const int tickIndex = sequence.position() == 0 ? 0 : sequence.position() - 1;
+    const TransportPosition time = sequence.transportPosition(tickIndex);
+
+    std::cout << "Position: bar " << time.bar << " / " << sequence.barCount()
+              << "  beat " << time.beat << " / " << sequence.beatsPerBar()
+              << "  tick " << time.tick << " / " << sequence.beatDuration()
+              << "  (" << time.toString() << ")\n";
+}
+
+void maybePrintBarPosition(const Sequence& sequence)
+{
+    const int tickIndex = sequence.position();
+    const int ticksPerBar = sequence.beatsPerBar() * sequence.beatDuration();
+
+    if (tickIndex % ticksPerBar != 0)
+        return;
+
+    const TransportPosition time = sequence.transportPosition(tickIndex);
+    std::cout << "--- Bar " << time.bar << " ---\n";
+}
 } // namespace
 
 int main()
@@ -134,6 +158,7 @@ int main()
         });
 
         clock.setOnTick([&sequence, &sender](int tick) {
+            maybePrintBarPosition(sequence);
             sequence.processTick(sender, tick);
         });
 
@@ -145,10 +170,13 @@ int main()
                   << sequence.trackCount() << " tracks\n";
         printTracks(sequence);
 
-        std::cout << "Commands: [p]lay  [s]top  [t]empo <bpm>  [m]ute <index>  [q]uit\n";
+        std::cout << "Commands: [p]lay  [s]top  pos  [t]empo <bpm>  [m]ute <index>  [q]uit\n";
 
         while (gKeepRunning)
         {
+            if (clock.isPlaying())
+                std::cout << "[" << sequence.formatPlayhead() << "] ";
+
             std::cout << "> ";
             std::string command;
             if (!std::getline(std::cin, command))
@@ -158,6 +186,8 @@ int main()
                 clock.play();
             else if (command == "s" || command == "stop")
                 clock.stop();
+            else if (command == "pos" || command == "position")
+                printPosition(sequence);
             else if (command == "q" || command == "quit")
                 break;
             else if (command == "t" || command == "tempo" || command == "bpm")
@@ -175,7 +205,7 @@ int main()
                 tryMuteTrack(sequence, sender, command.substr(space + 1));
             }
             else if (!command.empty())
-                std::cout << "Unknown command. Use p/s/t/m/q.\n";
+                std::cout << "Unknown command. Use p/s/pos/t/m/q.\n";
         }
 
         clock.stop();

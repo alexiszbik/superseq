@@ -1,9 +1,11 @@
 #pragma once
 
 #include "SequenceTrack.h"
+#include "TransportPosition.h"
 #include "VirtualMidiSender.h"
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 class Sequence
@@ -21,6 +23,10 @@ public:
     void setLooping(bool loop) noexcept { looping_ = loop; }
 
     int lengthInTicks() const noexcept;
+    int position() const noexcept { return position_; }
+
+    TransportPosition transportPosition(int tickIndex) const;
+    std::string formatPlayhead() const;
 
     void addTrack(SequenceTrack track);
     void clearTracks();
@@ -46,5 +52,6 @@ private:
     bool looping_;
     int beatDuration_;
 
+    int position_ = 0;
     std::vector<SequenceTrack> tracks_;
 };

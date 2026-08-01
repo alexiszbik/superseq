@@ -1,6 +1,7 @@
 #include "Sequence.h"
 
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 namespace
@@ -32,6 +33,18 @@ int Sequence::lengthInTicks() const noexcept
     return barCount_ * beatsPerBar_ * beatDuration_;
 }
 
+TransportPosition Sequence::transportPosition(int tickIndex) const
+{
+    return TransportPosition::fromTickIndex(
+        tickIndex, beatsPerBar_, beatDuration_, lengthInTicks());
+}
+
+std::string Sequence::formatPlayhead() const
+{
+    const int tickIndex = position_ == 0 ? 0 : position_ - 1;
+    return transportPosition(tickIndex).toString();
+}
+
 void Sequence::addTrack(SequenceTrack track)
 {
     tracks_.push_back(std::move(track));
@@ -59,6 +72,8 @@ void Sequence::setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& s
 
 void Sequence::reset()
 {
+    position_ = 0;
+
     for (SequenceTrack& track : tracks_) {
         track.reset();
     }
@@ -71,15 +86,23 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick)
         return;
     }
 
-    if (!looping_ && tick >= length) {
+    if (!looping_ && position_ >= length) {
         return;
     }
 
-    const int position = looping_ ? (tick % length) : tick;
-    const bool loopWrap = looping_ && position == 0 && tick > 0;
+    const bool loopWrap = looping_ && position_ == 0 && tick > 0;
 
     for (SequenceTrack& track : tracks_) {
-        track.processTick(sender, position, loopWrap);
+        track.processTick(sender, position_, loopWrap);
+    }
+
+    if (looping_) {
+        ++position_;
+        if (position_ >= length) {
+            position_ = 0;
+        }
+    } else {
+        ++position_;
     }
 }
 

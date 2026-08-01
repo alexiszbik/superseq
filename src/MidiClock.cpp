@@ -64,14 +64,13 @@ void MidiClock::setOnTick(TickCallback callback)
 
 void MidiClock::play()
 {
-    if (playing_.exchange(true))
-        return;
-
-    currentTick_.store(0);
-
     TransportCallback onPlay;
     {
         std::lock_guard lock(mutex_);
+        if (playing_)
+            return;
+
+        currentTick_.store(0);
         onPlay = onPlay_;
     }
 
@@ -79,6 +78,11 @@ void MidiClock::play()
         onPlay();
 
     sender_.sendStart();
+
+    {
+        std::lock_guard lock(mutex_);
+        playing_.store(true);
+    }
     cv_.notify_one();
 
     std::cout << "MIDI clock started at " << bpm() << " BPM\n";
@@ -86,16 +90,17 @@ void MidiClock::play()
 
 void MidiClock::stop()
 {
-    if (!playing_.exchange(false))
-        return;
-
-    sender_.sendStop();
-
     TransportCallback onStop;
     {
         std::lock_guard lock(mutex_);
+        if (!playing_)
+            return;
+
+        playing_.store(false);
         onStop = onStop_;
     }
+
+    sender_.sendStop();
 
     if (onStop)
         onStop();

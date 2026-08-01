@@ -21,6 +21,7 @@ add_executable(ProtoSeq
     src/MidiClock.cpp
     src/Sequence.cpp
     src/SequenceTrack.cpp
+    src/TransportPosition.cpp
     src/VirtualMidiSender.cpp
 )
 
