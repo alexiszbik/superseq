@@ -106,7 +106,12 @@ void SequenceTrack::setMuted(bool muted)
     muted_ = muted;
 
     if (muted) {
+
         releaseActiveNotes();
+        //this might prevent from mute/unmute bug !
+        nextNoteIndex_ = 0;
+        nextControlChangeIndex_ = 0;
+        nextProgramChangeIndex_ = 0;
     }
 }
 
