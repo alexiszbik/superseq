@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ControlChange.h"
+#include "Note.h"
+#include "ProgramChange.h"
 #include "VirtualMidiSender.h"
 
 #include <cstdint>
@@ -9,15 +12,6 @@
 class SequenceTrack
 {
 public:
-    struct Note
-    {
-        int tick = 0;
-        int durationTicks = 0;
-        uint8_t channel = 0;
-        uint8_t note = 0;
-        uint8_t velocity = 0;
-    };
-
     explicit SequenceTrack(std::string name = {});
 
     const std::string& name() const noexcept { return name_; }
@@ -34,6 +28,17 @@ public:
         uint8_t velocity,
         uint8_t channel);
 
+    void addControlChange(
+        int tick,
+        uint8_t channel,
+        uint8_t controller,
+        uint8_t value);
+
+    void addProgramChange(
+        int tick,
+        uint8_t channel,
+        uint8_t program);
+
     void reset();
     void processTick(VirtualMidiSender& sender, int position, bool loopWrap);
     void releaseActiveNotes(VirtualMidiSender& sender);
@@ -47,15 +52,28 @@ private:
     };
 
     void sortNotes();
+    void sortControlChanges();
+    void sortProgramChanges();
+
+    void processProgramChanges(VirtualMidiSender& sender, int position, bool loopWrap);
+    void processControlChanges(VirtualMidiSender& sender, int position, bool loopWrap);
+    void processNotes(VirtualMidiSender& sender, int position, bool loopWrap);
+
     void startNote(VirtualMidiSender& sender, const Note& note);
     void tickActiveNotes(VirtualMidiSender& sender);
 
-
     std::string name_;
+    
     bool muted_ = false;
-
     bool startMuted_ = false;
-    std::vector<Note> notes_;
+
     std::vector<ActiveNote> activeNotes_;
+
+    std::vector<Note> notes_;
+    std::vector<ControlChange> controlChanges_;
+    std::vector<ProgramChange> programChanges_;
+
     std::size_t nextNoteIndex_ = 0;
+    std::size_t nextControlChangeIndex_ = 0;
+    std::size_t nextProgramChangeIndex_ = 0;
 };

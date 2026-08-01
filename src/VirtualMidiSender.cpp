@@ -36,6 +36,16 @@ void VirtualMidiSender::sendNoteOff(uint8_t channel, uint8_t note, uint8_t veloc
     sendMessage({ static_cast<uint8_t>(0x80 | (channel & 0x0F)), note, velocity });
 }
 
+void VirtualMidiSender::sendControlChange(uint8_t channel, uint8_t controller, uint8_t value)
+{
+    sendMessage({ static_cast<uint8_t>(0xB0 | (channel & 0x0F)), controller, value });
+}
+
+void VirtualMidiSender::sendProgramChange(uint8_t channel, uint8_t program)
+{
+    sendMessage({ static_cast<uint8_t>(0xC0 | (channel & 0x0F)), program });
+}
+
 void VirtualMidiSender::sendClock()
 {
     sendRealtime(0xF8);

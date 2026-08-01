@@ -24,6 +24,33 @@ void SequenceTrack::addNote(
     sortNotes();
 }
 
+void SequenceTrack::addControlChange(
+    int tick,
+    uint8_t channel,
+    uint8_t controller,
+    uint8_t value)
+{
+    if (tick < 0) {
+        throw std::invalid_argument("Invalid control change timing");
+    }
+
+    controlChanges_.push_back({ tick, channel, controller, value });
+    sortControlChanges();
+}
+
+void SequenceTrack::addProgramChange(
+    int tick,
+    uint8_t channel,
+    uint8_t program)
+{
+    if (tick < 0) {
+        throw std::invalid_argument("Invalid program change timing");
+    }
+
+    programChanges_.push_back({ tick, channel, program });
+    sortProgramChanges();
+}
+
 void SequenceTrack::sortNotes()
 {
     std::sort(notes_.begin(), notes_.end(), [](const Note& a, const Note& b) {
@@ -31,9 +58,27 @@ void SequenceTrack::sortNotes()
     });
 }
 
+void SequenceTrack::sortControlChanges()
+{
+    std::sort(controlChanges_.begin(), controlChanges_.end(),
+        [](const ControlChange& a, const ControlChange& b) {
+            return a.tick < b.tick;
+        });
+}
+
+void SequenceTrack::sortProgramChanges()
+{
+    std::sort(programChanges_.begin(), programChanges_.end(),
+        [](const ProgramChange& a, const ProgramChange& b) {
+            return a.tick < b.tick;
+        });
+}
+
 void SequenceTrack::reset()
 {
     nextNoteIndex_ = 0;
+    nextControlChangeIndex_ = 0;
+    nextProgramChangeIndex_ = 0;
     activeNotes_.clear();
     muted_ = startMuted_;
 }
@@ -46,9 +91,9 @@ void SequenceTrack::setMuted(bool muted, VirtualMidiSender& sender)
 
     muted_ = muted;
 
-    if (muted) {
+    /*if (muted) {
         releaseActiveNotes(sender);
-    }
+    }*/
 }
 
 void SequenceTrack::startNote(VirtualMidiSender& sender, const Note& note)
@@ -81,12 +126,59 @@ void SequenceTrack::releaseActiveNotes(VirtualMidiSender& sender)
     activeNotes_.clear();
 }
 
-void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool loopWrap)
+void SequenceTrack::processProgramChanges(
+    VirtualMidiSender& sender,
+    int position,
+    bool loopWrap)
 {
-    if (muted_) {
-        return;
+    if (loopWrap) {
+        nextProgramChangeIndex_ = 0;
     }
 
+    while (nextProgramChangeIndex_ < programChanges_.size()
+           && programChanges_[nextProgramChangeIndex_].tick < position)
+    {
+        ++nextProgramChangeIndex_;
+    }
+
+    while (nextProgramChangeIndex_ < programChanges_.size()
+           && programChanges_[nextProgramChangeIndex_].tick == position)
+    {
+        const ProgramChange& change = programChanges_[nextProgramChangeIndex_];
+        sender.sendProgramChange(change.channel, change.program);
+        ++nextProgramChangeIndex_;
+    }
+}
+
+void SequenceTrack::processControlChanges(
+    VirtualMidiSender& sender,
+    int position,
+    bool loopWrap)
+{
+    if (loopWrap) {
+        nextControlChangeIndex_ = 0;
+    }
+
+    while (nextControlChangeIndex_ < controlChanges_.size()
+           && controlChanges_[nextControlChangeIndex_].tick < position)
+    {
+        ++nextControlChangeIndex_;
+    }
+
+    while (nextControlChangeIndex_ < controlChanges_.size()
+           && controlChanges_[nextControlChangeIndex_].tick == position)
+    {
+        const ControlChange& change = controlChanges_[nextControlChangeIndex_];
+        sender.sendControlChange(change.channel, change.controller, change.value);
+        ++nextControlChangeIndex_;
+    }
+}
+
+void SequenceTrack::processNotes(
+    VirtualMidiSender& sender,
+    int position,
+    bool loopWrap)
+{
     if (loopWrap) {
         nextNoteIndex_ = 0;
     }
@@ -100,6 +192,14 @@ void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool lo
         startNote(sender, notes_[nextNoteIndex_]);
         ++nextNoteIndex_;
     }
+}
 
+void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool loopWrap)
+{
+    if (!muted_) {
+        processProgramChanges(sender, position, loopWrap);
+        processControlChanges(sender, position, loopWrap);
+        processNotes(sender, position, loopWrap);
+    }
     tickActiveNotes(sender);
 }
