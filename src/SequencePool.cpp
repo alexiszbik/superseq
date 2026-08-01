@@ -1,5 +1,7 @@
 #include "SequencePool.h"
 
+#include "factories/SequenceFactory.h"
+
 #include <iostream>
 #include <utility>
 
@@ -118,7 +120,14 @@ void SequencePool::advanceToPrevious(VirtualMidiSender& sender)
 SequencePool SequencePool::createDefault()
 {
     SequencePool pool;
-    pool.add(Sequence::createSequenceOne(4));
-    pool.add(Sequence::createSequenceTwo(4));
+
+    pool.add(SequenceFactory::createSequenceOne(4));
+    pool.add(SequenceFactory::createSequenceTwo(4));
+    pool.add(SequenceFactory::createSequenceThree(4));
+    pool.add(SequenceFactory::createSequenceFour(4));
+    pool.add(SequenceFactory::createSequenceFive(4));
+    pool.add(SequenceFactory::createSequenceSix(4));
+    pool.add(SequenceFactory::createSequenceSeven(2));
+
     return pool;
 }

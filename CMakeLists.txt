@@ -24,6 +24,8 @@ add_executable(ProtoSeq
     src/SequenceTrack.cpp
     src/TransportPosition.cpp
     src/VirtualMidiSender.cpp
+    src/factories/SequenceFactory.cpp
+    src/factories/SequenceTrackFactory.cpp
 )
 
 target_include_directories(ProtoSeq PRIVATE src)
