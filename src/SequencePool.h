@@ -19,8 +19,8 @@ public:
     const Sequence& current() const;
 
     void resetCurrent();
-    void requestNext();
-    void requestPrevious();
+    void requestNext(VirtualMidiSender& sender, bool now = false);
+    void requestPrevious(VirtualMidiSender& sender, bool now = false);
     void processTick(VirtualMidiSender& sender, int tick);
     void allNotesOff(VirtualMidiSender& sender);
 

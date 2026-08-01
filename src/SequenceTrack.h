@@ -36,6 +36,7 @@ public:
 
     void reset();
     void processTick(VirtualMidiSender& sender, int position, bool loopWrap);
+    void releaseActiveNotes(VirtualMidiSender& sender);
 
 private:
     struct ActiveNote
@@ -48,7 +49,7 @@ private:
     void sortNotes();
     void startNote(VirtualMidiSender& sender, const Note& note);
     void tickActiveNotes(VirtualMidiSender& sender);
-    void releaseActiveNotes(VirtualMidiSender& sender);
+
 
     std::string name_;
     bool muted_ = false;

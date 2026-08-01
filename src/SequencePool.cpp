@@ -59,14 +59,22 @@ void SequencePool::queueSwitch(PendingSwitch direction)
     }
 }
 
-void SequencePool::requestNext()
+void SequencePool::requestNext(VirtualMidiSender& sender, bool now)
 {
-    queueSwitch(PendingSwitch::Next);
+    if (now) {
+        advanceToNext(sender);
+    } else {
+        queueSwitch(PendingSwitch::Next);
+    }
 }
 
-void SequencePool::requestPrevious()
+void SequencePool::requestPrevious(VirtualMidiSender& sender, bool now)
 {
-    queueSwitch(PendingSwitch::Previous);
+    if (now) {
+        advanceToPrevious(sender);
+    } else {
+        queueSwitch(PendingSwitch::Previous);
+    }
 }
 
 void SequencePool::processTick(VirtualMidiSender& sender, int tick)
@@ -98,6 +106,11 @@ void SequencePool::allNotesOff(VirtualMidiSender& sender)
 
 void SequencePool::advanceToNext(VirtualMidiSender& sender)
 {
+    if (currentIndex_ == (size() - 1)) {
+        std::cout << "Already on last sequence.\n";
+        return;
+    }
+
     current().allNotesOff(sender);
 
     pendingSwitch_ = PendingSwitch::None;
@@ -111,6 +124,11 @@ void SequencePool::advanceToNext(VirtualMidiSender& sender)
 
 void SequencePool::advanceToPrevious(VirtualMidiSender& sender)
 {
+    if (currentIndex_ == 0) {
+        std::cout << "Already on first sequence.\n";
+        return;
+    }
+
     current().allNotesOff(sender);
 
     pendingSwitch_ = PendingSwitch::None;

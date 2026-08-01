@@ -198,9 +198,9 @@ int main()
             else if (command == "s" || command == "stop")
                 clock.stop();
             else if (command == "n" || command == "next")
-                pool.requestNext();
+                pool.requestNext(sender, !clock.isPlaying());
             else if (command == "b" || command == "back" || command == "previous" || command == "prev")
-                pool.requestPrevious();
+                pool.requestPrevious(sender, !clock.isPlaying());
             else if (command == "pos" || command == "position")
                 printPosition(pool.current());
             else if (command == "q" || command == "quit")

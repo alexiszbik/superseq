@@ -107,12 +107,16 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd)
     }
 }
 
-void Sequence::allNotesOff(VirtualMidiSender& sender)
+void Sequence::allNotesOff(VirtualMidiSender& sender) ////?
 {
+    /*
     for (uint8_t channel = 0; channel < 16; ++channel)
     {
         for (int note = 0; note < 128; ++note) {
             sender.sendNoteOff(channel, static_cast<uint8_t>(note), 0);
         }
+    }*/
+    for (SequenceTrack& track : tracks_) {
+        track.releaseActiveNotes(sender);
     }
 }
