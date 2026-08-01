@@ -16,7 +16,6 @@ public:
     Sequence(
         int barCount,
         int beatsPerBar = 4,
-        bool loop = true,
         int barLoop = 0,
         int beatDuration = kTicksPerQuarterNote);
 
@@ -25,9 +24,6 @@ public:
     int beatDuration() const noexcept { return beatDuration_; }
     int loopInPoint() const noexcept { return loopInPoint_; }
     int barLoop() const noexcept { return loopInPoint_ / (beatsPerBar_ * beatDuration_); }
-    bool isLooping() const noexcept { return looping_; }
-
-    void setLooping(bool loop) noexcept { looping_ = loop; }
 
     int lengthInTicks() const noexcept;
     int position() const noexcept { return position_; }
@@ -45,7 +41,7 @@ public:
     void setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& sender);
 
     void reset();
-    void processTick(VirtualMidiSender& sender, int tick);
+    void processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd = true);
     void allNotesOff(VirtualMidiSender& sender);
 
     static Sequence createSequenceOne(int barCount = 4);
@@ -62,7 +58,6 @@ private:
 
     int barCount_;
     int beatsPerBar_;
-    bool looping_;
     int beatDuration_;
 
     int loopInPoint_ = 0;

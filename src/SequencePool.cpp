@@ -21,7 +21,6 @@ const Sequence& SequencePool::current() const
 void SequencePool::resetCurrent()
 {
     pendingSwitch_ = PendingSwitch::None;
-    current().setLooping(true);
     current().reset();
 }
 
@@ -49,7 +48,6 @@ void SequencePool::queueSwitch(PendingSwitch direction)
     }
 
     pendingSwitch_ = direction;
-    current().setLooping(false);
 
     if (direction == PendingSwitch::Next)
         std::cout << "Next sequence queued — finishing current sequence...\n";
@@ -73,7 +71,8 @@ void SequencePool::processTick(VirtualMidiSender& sender, int tick)
         return;
 
     Sequence& sequence = current();
-    sequence.processTick(sender, tick);
+    const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
+    sequence.processTick(sender, tick, wrapAtEnd);
 
     if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
     {
@@ -98,7 +97,6 @@ void SequencePool::advanceToNext(VirtualMidiSender& sender)
     ++currentIndex_;
 
     current().reset();
-    current().setLooping(true);
 
     std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
               << " (" << current().trackCount() << " tracks)\n";
@@ -112,7 +110,6 @@ void SequencePool::advanceToPrevious(VirtualMidiSender& sender)
     --currentIndex_;
 
     current().reset();
-    current().setLooping(true);
 
     std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
               << " (" << current().trackCount() << " tracks)\n";

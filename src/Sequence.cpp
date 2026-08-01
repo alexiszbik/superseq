@@ -10,11 +10,10 @@ namespace
 constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
 } // namespace
 
-Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int barLoop, int beatDuration)
+Sequence::Sequence(int barCount, int beatsPerBar, int barLoop, int beatDuration)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
     , beatDuration_(beatDuration)
-    , looping_(loop)
 {
     if (barCount_ <= 0) {
         throw std::invalid_argument("Sequence bar count must be positive");
@@ -87,32 +86,30 @@ void Sequence::reset()
     }
 }
 
-void Sequence::processTick(VirtualMidiSender& sender, int tick)
+void Sequence::processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd)
 {
     const int length = lengthInTicks();
     if (length <= 0) {
         return;
     }
 
-    if (!looping_ && position_ >= length) {
+    if (!wrapAtEnd && position_ >= length) {
         return;
     }
 
-    const bool loopWrap = looping_ && loopStartAfterWrap_;
+    const bool loopWrap = wrapAtEnd && loopStartAfterWrap_;
     loopStartAfterWrap_ = false;
 
     for (SequenceTrack& track : tracks_) {
         track.processTick(sender, position_, loopWrap);
     }
 
-    if (looping_) {
-        ++position_;
-        if (position_ >= length) {
+    ++position_;
+    if (position_ >= length) {
+        if (wrapAtEnd) {
             position_ = loopInPoint_;
             loopStartAfterWrap_ = true;
         }
-    } else {
-        ++position_;
     }
 }
 
@@ -236,7 +233,7 @@ void Sequence::populateSequenceTwo(Sequence& sequence, int lengthInTicks, int be
 
 Sequence Sequence::createSequenceOne(int barCount)
 {
-    Sequence sequence(barCount, 4, true, 2);
+    Sequence sequence(barCount, 4, 2);
     const int length = sequence.lengthInTicks();
     const int beatDuration = sequence.beatDuration();
 
@@ -247,7 +244,7 @@ Sequence Sequence::createSequenceOne(int barCount)
 
 Sequence Sequence::createSequenceTwo(int barCount)
 {
-    Sequence sequence(barCount, 4, false);
+    Sequence sequence(barCount, 4);
     const int length = sequence.lengthInTicks();
     const int beatDuration = sequence.beatDuration();
 
