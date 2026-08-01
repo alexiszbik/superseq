@@ -14,24 +14,21 @@ void SequenceTrack::addNote(
     int durationTicks,
     uint8_t note,
     uint8_t velocity,
-    uint8_t channel,
-    int maxTick)
+    uint8_t channel)
 {
     if (startTick < 0 || durationTicks <= 0) {
         throw std::invalid_argument("Invalid note timing");
     }
 
-    addEvent({ startTick, channel, note, velocity, true }, maxTick);
-    addEvent({ startTick + durationTicks, channel, note, 0, false }, maxTick);
+    addEvent({ startTick, channel, note, velocity, true });
+    addEvent({ startTick + durationTicks, channel, note, 0, false });
 }
 
-void SequenceTrack::addEvent(const Event& event, int maxTick)
+void SequenceTrack::addEvent(const Event& event)
 {
-    if (event.tick < 0 || event.tick >= maxTick)
+    if (event.tick < 0)
     {
-        throw std::out_of_range(
-            "Event tick " + std::to_string(event.tick) + " is outside sequence length "
-            + std::to_string(maxTick));
+        throw std::out_of_range("Event tick cannot be negative");
     }
 
     events_.push_back(event);

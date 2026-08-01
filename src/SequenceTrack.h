@@ -33,10 +33,9 @@ public:
         int durationTicks,
         uint8_t note,
         uint8_t velocity,
-        uint8_t channel,
-        int maxTick);
+        uint8_t channel);
 
-    void addEvent(const Event& event, int maxTick);
+    void addEvent(const Event& event);
 
     void reset();
     void processTick(VirtualMidiSender& sender, int position, bool loopWrap);

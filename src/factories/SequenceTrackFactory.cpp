@@ -20,10 +20,8 @@ SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int b
     {
         const int tick = beat * beatDuration;
         const int bar = static_cast<int>(std::floor(beat / 4.0));
-        track.addNote(tick, noteDuration, static_cast<uint8_t>(notes[beat % 4] + 2 * bar), 100, 0, lengthInTicks);
+        track.addNote(tick, noteDuration, static_cast<uint8_t>(notes[beat % 4] + 2 * bar), 100, 0);
     }
-
-    track.setStartMuted();
 
     return track;
 }
@@ -39,7 +37,7 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int bea
     for (int beat = 0; beat < beatCount; ++beat)
     {
         const int tick = beat * beatDuration;
-        track.addNote(tick, noteDuration, notes[beat % 4], 95, 0, lengthInTicks);
+        track.addNote(tick, noteDuration, notes[beat % 4], 95, 0);
     }
 
     return track;
@@ -60,7 +58,7 @@ SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatD
         const bool isKickBeat = (beat % 4) == 0 || (beat % 4) == 2;
         const uint8_t note = isKickBeat ? kKickNote : kSnareNote;
 
-        track.addNote(tick, kDefaultHitDuration, note, 127, kDrumChannel, lengthInTicks);
+        track.addNote(tick, kDefaultHitDuration, note, 127, kDrumChannel);
     }
 
     return track;
@@ -82,9 +80,9 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, i
         const bool isSnare = (beat % 4) == 1 || (beat % 4) == 3;
 
         if (isSnare)
-            track.addNote(tick, kDefaultHitDuration, kSnareNote, 127, kDrumChannel, lengthInTicks);
+            track.addNote(tick, kDefaultHitDuration, kSnareNote, 127, kDrumChannel);
 
-        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel, lengthInTicks);
+        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel);
     }
 
     const int sixteenthDuration = beatDuration / 4;
@@ -97,8 +95,10 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, i
         const int tick = sixteenth * sixteenthDuration;
         const int velocity = (127 / 4) * (velocityStep + 1);
 
-        track.addNote(tick, hatDuration, kHatNote, static_cast<uint8_t>(velocity), kDrumChannel, lengthInTicks);
+        track.addNote(tick, hatDuration, kHatNote, static_cast<uint8_t>(velocity), kDrumChannel);
     }
+
+    track.setStartMuted();
 
     return track;
 }
@@ -117,7 +117,7 @@ SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks, int beatDu
         const int bar = sixteenth / 16;
         const uint8_t note = (bar == 3) ? static_cast<uint8_t>(48) : static_cast<uint8_t>(36);
 
-        track.addNote(tick, noteLength, note, 100, 0, lengthInTicks);
+        track.addNote(tick, noteLength, note, 100, 0);
     }
 
     return track;
@@ -135,7 +135,7 @@ SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks, int bea
     for (int eighth = 0; eighth < eighthCount; ++eighth)
     {
         const int tick = eighth * eighthDuration;
-        track.addNote(tick, noteLength, notes[eighth % 8], 110, 0, lengthInTicks);
+        track.addNote(tick, noteLength, notes[eighth % 8], 110, 0);
     }
 
     return track;
@@ -159,7 +159,7 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
         const int tick = sixteenth * sixteenthDuration;
         const uint8_t velocity = static_cast<uint8_t>(80 + (sixteenth % 4) * 10);
 
-        track.addNote(tick, noteLength, kHatNote, velocity, kDrumChannel, lengthInTicks);
+        track.addNote(tick, noteLength, kHatNote, velocity, kDrumChannel);
     }
 
     return track;
@@ -176,7 +176,7 @@ SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int
     for (int beat = 0; beat < beatCount; ++beat)
     {
         const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel, lengthInTicks);
+        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel);
     }
 
     return track;
@@ -196,7 +196,7 @@ SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks, int b
             continue;
 
         const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kSnareNote, 120, kDrumChannel, lengthInTicks);
+        track.addNote(tick, kDefaultHitDuration, kSnareNote, 120, kDrumChannel);
     }
 
     return track;
@@ -216,9 +216,9 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
         const int tick = bar * ticksPerBar;
         const uint8_t root = barRoots[bar % 4];
 
-        track.addNote(tick, chordDuration, root, 70, 0, lengthInTicks);
-        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 4), 70, 0, lengthInTicks);
-        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 7), 70, 0, lengthInTicks);
+        track.addNote(tick, chordDuration, root, 70, 0);
+        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 4), 70, 0);
+        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 7), 70, 0);
     }
 
     return track;
@@ -239,7 +239,7 @@ SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks, int beat
             continue;
 
         const int tick = eighth * eighthDuration;
-        track.addNote(tick, noteLength, notes[(eighth / 2) % 4], 105, 0, lengthInTicks);
+        track.addNote(tick, noteLength, notes[(eighth / 2) % 4], 105, 0);
     }
 
     return track;
@@ -259,7 +259,7 @@ SequenceTrack SequenceTrackFactory::createClapBackbeat(int lengthInTicks, int be
             continue;
 
         const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kClapNote, 115, kDrumChannel, lengthInTicks);
+        track.addNote(tick, kDefaultHitDuration, kClapNote, 115, kDrumChannel);
     }
 
     return track;
