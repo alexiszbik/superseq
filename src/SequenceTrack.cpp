@@ -9,6 +9,20 @@ SequenceTrack::SequenceTrack(std::string name)
 {
 }
 
+void SequenceTrack::attachMidi(MidiInOut& midi)
+{
+    midi_ = &midi;
+}
+
+MidiInOut& SequenceTrack::midi()
+{
+    if (!midi_) {
+        throw std::logic_error("SequenceTrack: MIDI not attached");
+    }
+
+    return *midi_;
+}
+
 void SequenceTrack::addNote(
     int startTick,
     int durationTicks,
@@ -83,7 +97,7 @@ void SequenceTrack::reset()
     muted_ = startMuted_;
 }
 
-void SequenceTrack::setMuted(bool muted, VirtualMidiSender& sender)
+void SequenceTrack::setMuted(bool muted)
 {
     if (muted == muted_) {
         return;
@@ -91,25 +105,25 @@ void SequenceTrack::setMuted(bool muted, VirtualMidiSender& sender)
 
     muted_ = muted;
 
-    /*if (muted) {
-        releaseActiveNotes(sender);
-    }*/
+    if (muted) {
+        releaseActiveNotes();
+    }
 }
 
-void SequenceTrack::startNote(VirtualMidiSender& sender, const Note& note)
+void SequenceTrack::startNote(const Note& note)
 {
-    sender.sendNoteOn(note.channel, note.note, note.velocity);
+    midi().sendNoteOn(note.channel, note.note, note.velocity);
     activeNotes_.push_back({ note.channel, note.note, note.durationTicks });
 }
 
-void SequenceTrack::tickActiveNotes(VirtualMidiSender& sender)
+void SequenceTrack::tickActiveNotes()
 {
     for (auto it = activeNotes_.begin(); it != activeNotes_.end();)
     {
         --it->remainingTicks;
 
         if (it->remainingTicks <= 0) {
-            sender.sendNoteOff(it->channel, it->note, 0);
+            midi().sendNoteOff(it->channel, it->note, 0);
             it = activeNotes_.erase(it);
         } else {
             ++it;
@@ -117,19 +131,16 @@ void SequenceTrack::tickActiveNotes(VirtualMidiSender& sender)
     }
 }
 
-void SequenceTrack::releaseActiveNotes(VirtualMidiSender& sender)
+void SequenceTrack::releaseActiveNotes()
 {
     for (const ActiveNote& activeNote : activeNotes_) {
-        sender.sendNoteOff(activeNote.channel, activeNote.note, 0);
+        midi().sendNoteOff(activeNote.channel, activeNote.note, 0);
     }
 
     activeNotes_.clear();
 }
 
-void SequenceTrack::processProgramChanges(
-    VirtualMidiSender& sender,
-    int position,
-    bool loopWrap)
+void SequenceTrack::processProgramChanges(int position, bool loopWrap)
 {
     if (loopWrap) {
         nextProgramChangeIndex_ = 0;
@@ -145,15 +156,12 @@ void SequenceTrack::processProgramChanges(
            && programChanges_[nextProgramChangeIndex_].tick == position)
     {
         const ProgramChange& change = programChanges_[nextProgramChangeIndex_];
-        sender.sendProgramChange(change.channel, change.program);
+        midi().sendProgramChange(change.channel, change.program);
         ++nextProgramChangeIndex_;
     }
 }
 
-void SequenceTrack::processControlChanges(
-    VirtualMidiSender& sender,
-    int position,
-    bool loopWrap)
+void SequenceTrack::processControlChanges(int position, bool loopWrap)
 {
     if (loopWrap) {
         nextControlChangeIndex_ = 0;
@@ -169,15 +177,12 @@ void SequenceTrack::processControlChanges(
            && controlChanges_[nextControlChangeIndex_].tick == position)
     {
         const ControlChange& change = controlChanges_[nextControlChangeIndex_];
-        sender.sendControlChange(change.channel, change.controller, change.value);
+        midi().sendControlChange(change.channel, change.controller, change.value);
         ++nextControlChangeIndex_;
     }
 }
 
-void SequenceTrack::processNotes(
-    VirtualMidiSender& sender,
-    int position,
-    bool loopWrap)
+void SequenceTrack::processNotes(int position, bool loopWrap)
 {
     if (loopWrap) {
         nextNoteIndex_ = 0;
@@ -189,17 +194,18 @@ void SequenceTrack::processNotes(
 
     while (nextNoteIndex_ < notes_.size() && notes_[nextNoteIndex_].tick == position)
     {
-        startNote(sender, notes_[nextNoteIndex_]);
+        startNote(notes_[nextNoteIndex_]);
         ++nextNoteIndex_;
     }
 }
 
-void SequenceTrack::processTick(VirtualMidiSender& sender, int position, bool loopWrap)
+void SequenceTrack::processTick(int position, bool loopWrap)
 {
     if (!muted_) {
-        processProgramChanges(sender, position, loopWrap);
-        processControlChanges(sender, position, loopWrap);
-        processNotes(sender, position, loopWrap);
+        processProgramChanges(position, loopWrap);
+        processControlChanges(position, loopWrap);
+        processNotes(position, loopWrap);
     }
-    tickActiveNotes(sender);
+
+    tickActiveNotes();
 }

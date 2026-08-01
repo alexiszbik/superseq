@@ -1,7 +1,7 @@
 #pragma once
 
+#include "MidiInOut.h"
 #include "Sequence.h"
-#include "VirtualMidiSender.h"
 
 #include <cstddef>
 #include <vector>
@@ -9,6 +9,8 @@
 class SequencePool
 {
 public:
+    explicit SequencePool(MidiInOut& midi);
+
     void add(Sequence sequence);
 
     std::size_t size() const noexcept { return sequences_.size(); }
@@ -19,12 +21,12 @@ public:
     const Sequence& current() const;
 
     void resetCurrent();
-    void requestNext(VirtualMidiSender& sender, bool now = false);
-    void requestPrevious(VirtualMidiSender& sender, bool now = false);
-    void processTick(VirtualMidiSender& sender, int tick);
-    void allNotesOff(VirtualMidiSender& sender);
+    void requestNext(bool now = false);
+    void requestPrevious(bool now = false);
+    void processTick(int tick);
+    void allNotesOff();
 
-    static SequencePool createDefault();
+    static SequencePool createDefault(MidiInOut& midi);
 
 private:
     enum class PendingSwitch
@@ -34,10 +36,11 @@ private:
         Previous
     };
 
-    void advanceToNext(VirtualMidiSender& sender);
-    void advanceToPrevious(VirtualMidiSender& sender);
+    void advanceToNext();
+    void advanceToPrevious();
     void queueSwitch(PendingSwitch direction);
 
+    MidiInOut& midi_;
     std::vector<Sequence> sequences_;
     std::size_t currentIndex_ = 0;
     PendingSwitch pendingSwitch_ = PendingSwitch::None;

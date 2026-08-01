@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VirtualMidiSender.h"
+#include "MidiInOut.h"
 
 #include <functional>
 
@@ -18,7 +18,7 @@ public:
     using TickCallback = std::function<void(int tick)>;
     using TransportCallback = std::function<void()>;
 
-    explicit MidiClock(VirtualMidiSender& sender);
+    explicit MidiClock(MidiInOut& midi);
     ~MidiClock();
 
     MidiClock(const MidiClock&) = delete;
@@ -41,7 +41,7 @@ private:
     void run();
     std::chrono::nanoseconds tickInterval() const;
 
-    VirtualMidiSender& sender_;
+    MidiInOut& midi_;
 
     mutable std::mutex mutex_;
     double bpm_ = 120.0;

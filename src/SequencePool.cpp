@@ -5,8 +5,14 @@
 #include <iostream>
 #include <utility>
 
+SequencePool::SequencePool(MidiInOut& midi)
+    : midi_(midi)
+{
+}
+
 void SequencePool::add(Sequence sequence)
 {
+    sequence.attachMidi(midi_);
     sequences_.push_back(std::move(sequence));
 }
 
@@ -59,25 +65,25 @@ void SequencePool::queueSwitch(PendingSwitch direction)
     }
 }
 
-void SequencePool::requestNext(VirtualMidiSender& sender, bool now)
+void SequencePool::requestNext(bool now)
 {
     if (now) {
-        advanceToNext(sender);
+        advanceToNext();
     } else {
         queueSwitch(PendingSwitch::Next);
     }
 }
 
-void SequencePool::requestPrevious(VirtualMidiSender& sender, bool now)
+void SequencePool::requestPrevious(bool now)
 {
     if (now) {
-        advanceToPrevious(sender);
+        advanceToPrevious();
     } else {
         queueSwitch(PendingSwitch::Previous);
     }
 }
 
-void SequencePool::processTick(VirtualMidiSender& sender, int tick)
+void SequencePool::processTick(int tick)
 {
     if (sequences_.empty()) {
         return;
@@ -85,33 +91,34 @@ void SequencePool::processTick(VirtualMidiSender& sender, int tick)
 
     Sequence& sequence = current();
     const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
-    sequence.processTick(sender, tick, wrapAtEnd);
+    sequence.processTick(tick, wrapAtEnd);
 
     if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
     {
         if (pendingSwitch_ == PendingSwitch::Next) {
-            advanceToNext(sender);
+            advanceToNext();
         }
         else {
-            advanceToPrevious(sender); 
+            advanceToPrevious(); 
         }
     }
 }
 
-void SequencePool::allNotesOff(VirtualMidiSender& sender)
+void SequencePool::allNotesOff()
 {
-    for (Sequence& sequence : sequences_)
-        sequence.allNotesOff(sender);
+    for (Sequence& sequence : sequences_) {
+        sequence.allNotesOff();
+    }
 }
 
-void SequencePool::advanceToNext(VirtualMidiSender& sender)
+void SequencePool::advanceToNext()
 {
     if (currentIndex_ == (size() - 1)) {
         std::cout << "Already on last sequence.\n";
         return;
     }
 
-    current().allNotesOff(sender);
+    current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
     ++currentIndex_;
@@ -122,14 +129,14 @@ void SequencePool::advanceToNext(VirtualMidiSender& sender)
               << " (" << current().trackCount() << " tracks)\n";
 }
 
-void SequencePool::advanceToPrevious(VirtualMidiSender& sender)
+void SequencePool::advanceToPrevious()
 {
     if (currentIndex_ == 0) {
         std::cout << "Already on first sequence.\n";
         return;
     }
 
-    current().allNotesOff(sender);
+    current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
     --currentIndex_;
@@ -140,9 +147,9 @@ void SequencePool::advanceToPrevious(VirtualMidiSender& sender)
               << " (" << current().trackCount() << " tracks)\n";
 }
 
-SequencePool SequencePool::createDefault()
+SequencePool SequencePool::createDefault(MidiInOut& midi)
 {
-    SequencePool pool;
+    SequencePool pool(midi);
 
     pool.add(SequenceFactory::createSequenceOne(4));
     pool.add(SequenceFactory::createSequenceTwo(4));

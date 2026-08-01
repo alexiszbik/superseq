@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ControlChange.h"
+#include "MidiInOut.h"
 #include "Note.h"
 #include "ProgramChange.h"
-#include "VirtualMidiSender.h"
 
 #include <cstdint>
 #include <string>
@@ -16,8 +16,10 @@ public:
 
     const std::string& name() const noexcept { return name_; }
 
+    void attachMidi(MidiInOut& midi);
+
     bool isMuted() const noexcept { return muted_; }
-    void setMuted(bool muted, VirtualMidiSender& sender);
+    void setMuted(bool muted);
 
     void setStartMuted() { startMuted_ = true; }
 
@@ -40,8 +42,8 @@ public:
         uint8_t program);
 
     void reset();
-    void processTick(VirtualMidiSender& sender, int position, bool loopWrap);
-    void releaseActiveNotes(VirtualMidiSender& sender);
+    void processTick(int position, bool loopWrap);
+    void releaseActiveNotes();
 
 private:
     struct ActiveNote
@@ -51,22 +53,25 @@ private:
         int remainingTicks = 0;
     };
 
+    MidiInOut& midi();
+
     void sortNotes();
     void sortControlChanges();
     void sortProgramChanges();
 
-    void processProgramChanges(VirtualMidiSender& sender, int position, bool loopWrap);
-    void processControlChanges(VirtualMidiSender& sender, int position, bool loopWrap);
-    void processNotes(VirtualMidiSender& sender, int position, bool loopWrap);
+    void processProgramChanges(int position, bool loopWrap);
+    void processControlChanges(int position, bool loopWrap);
+    void processNotes(int position, bool loopWrap);
 
-    void startNote(VirtualMidiSender& sender, const Note& note);
-    void tickActiveNotes(VirtualMidiSender& sender);
+    void startNote(const Note& note);
+    void tickActiveNotes();
 
     std::string name_;
-    
+
     bool muted_ = false;
     bool startMuted_ = false;
 
+    MidiInOut* midi_ = nullptr;
     std::vector<ActiveNote> activeNotes_;
 
     std::vector<Note> notes_;

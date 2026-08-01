@@ -9,8 +9,8 @@ constexpr double kMinBpm = 20.0;
 constexpr double kMaxBpm = 300.0;
 } // namespace
 
-MidiClock::MidiClock(VirtualMidiSender& sender)
-    : sender_(sender)
+MidiClock::MidiClock(MidiInOut& midi)
+    : midi_(midi)
 {
     thread_ = std::thread(&MidiClock::run, this);
 }
@@ -77,7 +77,7 @@ void MidiClock::play()
     if (onPlay)
         onPlay();
 
-    sender_.sendStart();
+    midi_.sendStart();
 
     {
         std::lock_guard lock(mutex_);
@@ -100,7 +100,7 @@ void MidiClock::stop()
         onStop = onStop_;
     }
 
-    sender_.sendStop();
+    midi_.sendStop();
 
     if (onStop)
         onStop();
@@ -146,7 +146,7 @@ void MidiClock::run()
             if (onTick)
                 onTick(tick);
 
-            sender_.sendClock();
+            midi_.sendClock();
             currentTick_.store(tick + 1);
 
             nextTick += tickInterval();

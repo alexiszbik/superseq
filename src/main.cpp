@@ -65,7 +65,7 @@ void printPoolStatus(const SequencePool& pool)
     printTracks(pool.current());
 }
 
-bool tryMuteTrack(SequencePool& pool, VirtualMidiSender& sender, const std::string& argument)
+bool tryMuteTrack(SequencePool& pool, const std::string& argument)
 {
     Sequence& sequence = pool.current();
 
@@ -99,7 +99,7 @@ bool tryMuteTrack(SequencePool& pool, VirtualMidiSender& sender, const std::stri
     if (stream.fail())
     {
         const bool muted = !sequence.track(index).isMuted();
-        sequence.setTrackMuted(index, muted, sender);
+        sequence.setTrackMuted(index, muted);
         std::cout << "Track [" << index << "] " << sequence.track(index).name()
                   << (muted ? " muted\n" : " unmuted\n");
         return true;
@@ -107,12 +107,12 @@ bool tryMuteTrack(SequencePool& pool, VirtualMidiSender& sender, const std::stri
 
     if (state == "on" || state == "mute")
     {
-        sequence.setTrackMuted(index, true, sender);
+        sequence.setTrackMuted(index, true);
         std::cout << "Track [" << index << "] " << sequence.track(index).name() << " muted\n";
     }
     else if (state == "off" || state == "unmute")
     {
-        sequence.setTrackMuted(index, false, sender);
+        sequence.setTrackMuted(index, false);
         std::cout << "Track [" << index << "] " << sequence.track(index).name() << " unmuted\n";
     }
     else
@@ -158,7 +158,7 @@ int main()
     {
         VirtualMidiSender sender(kPortName);
         MidiClock clock(sender);
-        SequencePool pool = SequencePool::createDefault();
+        SequencePool pool = SequencePool::createDefault(sender);
 
         clock.setBpm(kDefaultBpm);
 
@@ -166,13 +166,13 @@ int main()
             pool.resetCurrent();
         });
 
-        clock.setOnTick([&pool, &sender](int tick) {
+        clock.setOnTick([&pool](int tick) {
             maybePrintBarPosition(pool.current());
-            pool.processTick(sender, tick);
+            pool.processTick(tick);
         });
 
-        clock.setOnStop([&pool, &sender]() {
-            pool.allNotesOff(sender);
+        clock.setOnStop([&pool]() {
+            pool.allNotesOff();
         });
 
         std::cout << "Loaded " << pool.size() << " sequences\n";
@@ -198,9 +198,9 @@ int main()
             else if (command == "s" || command == "stop")
                 clock.stop();
             else if (command == "n" || command == "next")
-                pool.requestNext(sender, !clock.isPlaying());
+                pool.requestNext(!clock.isPlaying());
             else if (command == "b" || command == "back" || command == "previous" || command == "prev")
-                pool.requestPrevious(sender, !clock.isPlaying());
+                pool.requestPrevious(!clock.isPlaying());
             else if (command == "pos" || command == "position")
                 printPosition(pool.current());
             else if (command == "q" || command == "quit")
@@ -213,11 +213,11 @@ int main()
                 trySetTempo(clock, command.substr(space + 1));
             }
             else if (command == "m" || command == "mute")
-                tryMuteTrack(pool, sender, "");
+                tryMuteTrack(pool, "");
             else if (command.rfind("m ", 0) == 0 || command.rfind("mute ", 0) == 0)
             {
                 const auto space = command.find(' ');
-                tryMuteTrack(pool, sender, command.substr(space + 1));
+                tryMuteTrack(pool, command.substr(space + 1));
             }
             else if (!command.empty())
                 std::cout << "Unknown command. Use p/s/n/b/pos/t/m/q.\n";

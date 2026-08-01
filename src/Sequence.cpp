@@ -45,8 +45,21 @@ std::string Sequence::formatPlayhead() const
     return transportPosition(tickIndex).toString();
 }
 
+void Sequence::attachMidi(MidiInOut& midi)
+{
+    midi_ = &midi;
+
+    for (SequenceTrack& track : tracks_) {
+        track.attachMidi(midi);
+    }
+}
+
 void Sequence::addTrack(SequenceTrack track)
 {
+    if (midi_) {
+        track.attachMidi(*midi_);
+    }
+
     tracks_.push_back(std::move(track));
 }
 
@@ -65,9 +78,9 @@ const SequenceTrack& Sequence::track(std::size_t index) const
     return tracks_.at(index);
 }
 
-void Sequence::setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& sender)
+void Sequence::setTrackMuted(std::size_t index, bool muted)
 {
-    tracks_.at(index).setMuted(muted, sender);
+    tracks_.at(index).setMuted(muted);
 }
 
 void Sequence::reset()
@@ -80,7 +93,7 @@ void Sequence::reset()
     }
 }
 
-void Sequence::processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd)
+void Sequence::processTick(int tick, bool wrapAtEnd)
 {
     const int length = lengthInTicks();
     if (length <= 0) {
@@ -95,7 +108,7 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd)
     loopStartAfterWrap_ = false;
 
     for (SequenceTrack& track : tracks_) {
-        track.processTick(sender, position_, loopWrap);
+        track.processTick(position_, loopWrap);
     }
 
     ++position_;
@@ -107,9 +120,9 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd)
     }
 }
 
-void Sequence::allNotesOff(VirtualMidiSender& sender)
+void Sequence::allNotesOff()
 {
     for (SequenceTrack& track : tracks_) {
-        track.releaseActiveNotes(sender);
+        track.releaseActiveNotes();
     }
 }

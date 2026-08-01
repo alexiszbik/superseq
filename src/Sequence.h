@@ -1,8 +1,8 @@
 #pragma once
 
+#include "MidiInOut.h"
 #include "SequenceTrack.h"
 #include "TransportPosition.h"
-#include "VirtualMidiSender.h"
 
 #include <cstddef>
 #include <string>
@@ -31,6 +31,8 @@ public:
     TransportPosition transportPosition(int tickIndex) const;
     std::string formatPlayhead() const;
 
+    void attachMidi(MidiInOut& midi);
+
     void addTrack(SequenceTrack track);
     void clearTracks();
 
@@ -38,11 +40,11 @@ public:
     SequenceTrack& track(std::size_t index);
     const SequenceTrack& track(std::size_t index) const;
 
-    void setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& sender);
+    void setTrackMuted(std::size_t index, bool muted);
 
     void reset();
-    void processTick(VirtualMidiSender& sender, int tick, bool wrapAtEnd = true);
-    void allNotesOff(VirtualMidiSender& sender);
+    void processTick(int tick, bool wrapAtEnd = true);
+    void allNotesOff();
 
     int barCount_;
     int beatsPerBar_;
@@ -52,4 +54,7 @@ public:
     int position_ = 0;
     bool loopStartAfterWrap_ = false;
     std::vector<SequenceTrack> tracks_;
+
+private:
+    MidiInOut* midi_ = nullptr;
 };
