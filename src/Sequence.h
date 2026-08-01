@@ -48,13 +48,17 @@ public:
     void processTick(VirtualMidiSender& sender, int tick);
     void allNotesOff(VirtualMidiSender& sender);
 
-    static Sequence createDemo(int barCount = 4);
-
+    static Sequence createSequenceOne(int barCount = 4);
+    static Sequence createSequenceTwo(int barCount = 4);
+    
 private:
     static SequenceTrack createCMaj7Track(int lengthInTicks, int beatDuration);
     static SequenceTrack createKickSnareTrack(int lengthInTicks, int beatDuration);
     static SequenceTrack createKickSnareTrack2(int lengthInTicks, int beatDuration);
     static SequenceTrack bassLineTrack(int lengthInTicks, int beatDuration);
+
+    static void populateSequenceOne(Sequence& sequence, int lengthInTicks, int beatDuration);
+    static void populateSequenceTwo(Sequence& sequence, int lengthInTicks, int beatDuration);
 
     int barCount_;
     int beatsPerBar_;

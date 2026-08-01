@@ -1,5 +1,6 @@
 #include "Sequence.h"
 
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -221,14 +222,36 @@ SequenceTrack Sequence::bassLineTrack(int lengthInTicks, int beatDuration) {
     return track;
 }
 
-Sequence Sequence::createDemo(int barCount)
+void Sequence::populateSequenceOne(Sequence& sequence, int lengthInTicks, int beatDuration)
 {
-    Sequence sequence(barCount, 4, true, 0);
+    sequence.addTrack(createCMaj7Track(lengthInTicks, beatDuration));
+    sequence.addTrack(createKickSnareTrack(lengthInTicks, beatDuration));
+}
+
+void Sequence::populateSequenceTwo(Sequence& sequence, int lengthInTicks, int beatDuration)
+{
+    sequence.addTrack(createKickSnareTrack2(lengthInTicks, beatDuration));
+    sequence.addTrack(bassLineTrack(lengthInTicks, beatDuration));
+}
+
+Sequence Sequence::createSequenceOne(int barCount)
+{
+    Sequence sequence(barCount, 4, true, 2);
     const int length = sequence.lengthInTicks();
     const int beatDuration = sequence.beatDuration();
 
-    sequence.addTrack(bassLineTrack(length, beatDuration));
-    sequence.addTrack(createKickSnareTrack2(length, beatDuration));
+    populateSequenceOne(sequence, length, beatDuration);
+
+    return sequence;
+}
+
+Sequence Sequence::createSequenceTwo(int barCount)
+{
+    Sequence sequence(barCount, 4, false);
+    const int length = sequence.lengthInTicks();
+    const int beatDuration = sequence.beatDuration();
+
+    populateSequenceTwo(sequence, length, beatDuration);
 
     return sequence;
 }

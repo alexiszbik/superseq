@@ -1,5 +1,6 @@
 #include "MidiClock.h"
 #include "Sequence.h"
+#include "SequencePool.h"
 #include "TransportPosition.h"
 #include "VirtualMidiSender.h"
 
@@ -58,11 +59,19 @@ void printTracks(const Sequence& sequence)
     }
 }
 
-bool tryMuteTrack(Sequence& sequence, VirtualMidiSender& sender, const std::string& argument)
+void printPoolStatus(const SequencePool& pool)
 {
+    std::cout << "Sequence " << pool.currentIndex() + 1 << " / " << pool.size() << "\n";
+    printTracks(pool.current());
+}
+
+bool tryMuteTrack(SequencePool& pool, VirtualMidiSender& sender, const std::string& argument)
+{
+    Sequence& sequence = pool.current();
+
     if (argument.empty())
     {
-        std::cout << "Tracks:\n";
+        std::cout << "Tracks (current sequence):\n";
         printTracks(sequence);
         std::cout << "Usage: m <index>  |  m <index> on/off\n";
         return true;
@@ -149,33 +158,35 @@ int main()
     {
         VirtualMidiSender sender(kPortName);
         MidiClock clock(sender);
-        Sequence sequence = Sequence::createDemo(4);
+        SequencePool pool = SequencePool::createDefault();
 
         clock.setBpm(kDefaultBpm);
 
-        clock.setOnPlay([&sequence]() {
-            sequence.reset();
+        clock.setOnPlay([&pool]() {
+            pool.resetCurrent();
         });
 
-        clock.setOnTick([&sequence, &sender](int tick) {
-            maybePrintBarPosition(sequence);
-            sequence.processTick(sender, tick);
+        clock.setOnTick([&pool, &sender](int tick) {
+            maybePrintBarPosition(pool.current());
+            pool.processTick(sender, tick);
         });
 
-        clock.setOnStop([&sequence, &sender]() {
-            sequence.allNotesOff(sender);
+        clock.setOnStop([&pool, &sender]() {
+            pool.allNotesOff(sender);
         });
 
-        std::cout << "Loaded sequence: " << sequence.barCount() << " bars, "
-                  << sequence.trackCount() << " tracks\n";
-        printTracks(sequence);
+        std::cout << "Loaded " << pool.size() << " sequences\n";
+        printPoolStatus(pool);
 
-        std::cout << "Commands: [p]lay  [s]top  pos  [t]empo <bpm>  [m]ute <index>  [q]uit\n";
+        std::cout << "Commands: [p]lay  [s]top  [n]ext  [b]ack  pos  [t]empo <bpm>  [m]ute <index>  [q]uit\n";
 
         while (gKeepRunning)
         {
             if (clock.isPlaying())
-                std::cout << "[" << sequence.formatPlayhead() << "] ";
+            {
+                std::cout << "[seq " << pool.currentIndex() + 1 << " | "
+                          << pool.current().formatPlayhead() << "] ";
+            }
 
             std::cout << "> ";
             std::string command;
@@ -186,8 +197,12 @@ int main()
                 clock.play();
             else if (command == "s" || command == "stop")
                 clock.stop();
+            else if (command == "n" || command == "next")
+                pool.requestNext();
+            else if (command == "b" || command == "back" || command == "previous" || command == "prev")
+                pool.requestPrevious();
             else if (command == "pos" || command == "position")
-                printPosition(sequence);
+                printPosition(pool.current());
             else if (command == "q" || command == "quit")
                 break;
             else if (command == "t" || command == "tempo" || command == "bpm")
@@ -198,14 +213,14 @@ int main()
                 trySetTempo(clock, command.substr(space + 1));
             }
             else if (command == "m" || command == "mute")
-                tryMuteTrack(sequence, sender, "");
+                tryMuteTrack(pool, sender, "");
             else if (command.rfind("m ", 0) == 0 || command.rfind("mute ", 0) == 0)
             {
                 const auto space = command.find(' ');
-                tryMuteTrack(sequence, sender, command.substr(space + 1));
+                tryMuteTrack(pool, sender, command.substr(space + 1));
             }
             else if (!command.empty())
-                std::cout << "Unknown command. Use p/s/pos/t/m/q.\n";
+                std::cout << "Unknown command. Use p/s/n/b/pos/t/m/q.\n";
         }
 
         clock.stop();
