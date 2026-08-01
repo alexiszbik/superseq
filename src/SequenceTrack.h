@@ -21,7 +21,6 @@ public:
     explicit SequenceTrack(std::string name = {});
 
     const std::string& name() const noexcept { return name_; }
-    const std::vector<Note>& notes() const noexcept { return notes_; }
 
     bool isMuted() const noexcept { return muted_; }
     void setMuted(bool muted, VirtualMidiSender& sender);
