@@ -9,7 +9,7 @@ namespace
 constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
 } // namespace
 
-Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int beatDuration)
+Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int barLoop, int beatDuration)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
     , beatDuration_(beatDuration)
@@ -26,6 +26,12 @@ Sequence::Sequence(int barCount, int beatsPerBar, bool loop, int beatDuration)
     if (beatDuration_ <= 0) {
         throw std::invalid_argument("Sequence beat duration must be positive");
     }
+
+    if (barLoop < 0 || barLoop >= barCount_) {
+        throw std::invalid_argument("barLoop must be between 0 and barCount - 1");
+    }
+
+    loopInPoint_ = barLoop * beatsPerBar_ * beatDuration_;
 }
 
 int Sequence::lengthInTicks() const noexcept
@@ -73,6 +79,7 @@ void Sequence::setTrackMuted(std::size_t index, bool muted, VirtualMidiSender& s
 void Sequence::reset()
 {
     position_ = 0;
+    loopStartAfterWrap_ = false;
 
     for (SequenceTrack& track : tracks_) {
         track.reset();
@@ -90,7 +97,8 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick)
         return;
     }
 
-    const bool loopWrap = looping_ && position_ == 0 && tick > 0;
+    const bool loopWrap = looping_ && loopStartAfterWrap_;
+    loopStartAfterWrap_ = false;
 
     for (SequenceTrack& track : tracks_) {
         track.processTick(sender, position_, loopWrap);
@@ -99,7 +107,8 @@ void Sequence::processTick(VirtualMidiSender& sender, int tick)
     if (looping_) {
         ++position_;
         if (position_ >= length) {
-            position_ = 0;
+            position_ = loopInPoint_;
+            loopStartAfterWrap_ = true;
         }
     } else {
         ++position_;
@@ -129,7 +138,8 @@ SequenceTrack Sequence::createCMaj7Track(int lengthInTicks, int beatDuration)
     for (int beat = 0; beat < beatCount; ++beat)
     {
         const int tick = beat * beatDuration;
-        track.addNote(tick, noteDuration, notes[beat % 4], 100, 0, lengthInTicks);
+        const int bar = floor(beat / 4);
+        track.addNote(tick, noteDuration, notes[ beat % 4] + 2*bar, 100, 0, lengthInTicks);
     }
 
     return track;
@@ -157,14 +167,68 @@ SequenceTrack Sequence::createKickSnareTrack(int lengthInTicks, int beatDuration
     return track;
 }
 
+SequenceTrack Sequence::createKickSnareTrack2(int lengthInTicks, int beatDuration) {
+    SequenceTrack track("Kick/Snare 2");
+
+    constexpr uint8_t kKickNote = 36;
+    constexpr uint8_t kSnareNote = 37;
+    constexpr uint8_t kHatNote = 42;
+    constexpr int kHitDuration = 10;
+
+    const int beatCount = lengthInTicks / beatDuration;
+
+    for (int beat = 0; beat < beatCount; ++beat)
+    {
+        const int tick = beat * beatDuration;
+        const bool isSnare = (beat % 4) == 1 || (beat % 4) == 3;
+
+        if (isSnare) {
+            track.addNote(tick, kHitDuration, kSnareNote, 127, kDrumChannel, lengthInTicks);
+        }
+
+        track.addNote(tick, kHitDuration, kKickNote, 127, kDrumChannel, lengthInTicks);
+    }
+
+    const int sexteenthDuration = beatDuration / 4;
+    const int sixteenthCount = lengthInTicks / sexteenthDuration;
+    const int hatDuration = sexteenthDuration / 2;
+
+    for (int sixteenth = 0; sixteenth < sixteenthCount; ++sixteenth)
+    {
+        const int velocityVariance = (sixteenth + 1) % 4;
+        const int tick = sixteenth * sexteenthDuration;
+        const int velocity = (127/4) * (velocityVariance + 1);
+        track.addNote(tick, hatDuration, kHatNote, velocity, kDrumChannel, lengthInTicks);
+    }
+
+    return track;
+}
+
+SequenceTrack Sequence::bassLineTrack(int lengthInTicks, int beatDuration) {
+    SequenceTrack track("bassline");
+
+    const int sexteenthDuration = beatDuration / 4;
+    const int sixteenthCount = lengthInTicks / sexteenthDuration;
+    const int noteLength = sexteenthDuration - 2;
+
+    for (int sixteenth = 0; sixteenth < sixteenthCount; ++sixteenth)
+    {
+        const int tick = sixteenth * sexteenthDuration;
+        const int bar = sixteenth / 16;
+        track.addNote(tick, noteLength, (bar == 3) ? 48 : 36, 100, 0, lengthInTicks);
+    }
+
+    return track;
+}
+
 Sequence Sequence::createDemo(int barCount)
 {
-    Sequence sequence(barCount, 4, true);
+    Sequence sequence(barCount, 4, true, 0);
     const int length = sequence.lengthInTicks();
     const int beatDuration = sequence.beatDuration();
 
-    sequence.addTrack(createCMaj7Track(length, beatDuration));
-    sequence.addTrack(createKickSnareTrack(length, beatDuration));
+    sequence.addTrack(bassLineTrack(length, beatDuration));
+    sequence.addTrack(createKickSnareTrack2(length, beatDuration));
 
     return sequence;
 }

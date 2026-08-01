@@ -13,11 +13,18 @@ class Sequence
 public:
     static constexpr int kTicksPerQuarterNote = 24;
 
-    Sequence(int barCount, int beatsPerBar = 4, bool loop = true, int beatDuration = kTicksPerQuarterNote);
+    Sequence(
+        int barCount,
+        int beatsPerBar = 4,
+        bool loop = true,
+        int barLoop = 0,
+        int beatDuration = kTicksPerQuarterNote);
 
     int barCount() const noexcept { return barCount_; }
     int beatsPerBar() const noexcept { return beatsPerBar_; }
     int beatDuration() const noexcept { return beatDuration_; }
+    int loopInPoint() const noexcept { return loopInPoint_; }
+    int barLoop() const noexcept { return loopInPoint_ / (beatsPerBar_ * beatDuration_); }
     bool isLooping() const noexcept { return looping_; }
 
     void setLooping(bool loop) noexcept { looping_ = loop; }
@@ -46,12 +53,16 @@ public:
 private:
     static SequenceTrack createCMaj7Track(int lengthInTicks, int beatDuration);
     static SequenceTrack createKickSnareTrack(int lengthInTicks, int beatDuration);
+    static SequenceTrack createKickSnareTrack2(int lengthInTicks, int beatDuration);
+    static SequenceTrack bassLineTrack(int lengthInTicks, int beatDuration);
 
     int barCount_;
     int beatsPerBar_;
     bool looping_;
     int beatDuration_;
 
+    int loopInPoint_ = 0;
     int position_ = 0;
+    bool loopStartAfterWrap_ = false;
     std::vector<SequenceTrack> tracks_;
 };
