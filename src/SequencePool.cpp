@@ -51,10 +51,12 @@ void SequencePool::queueSwitch(PendingSwitch direction)
 
     pendingSwitch_ = direction;
 
-    if (direction == PendingSwitch::Next)
+    if (direction == PendingSwitch::Next) {
         std::cout << "Next sequence queued — finishing current sequence...\n";
-    else
+    }
+    else {
         std::cout << "Previous sequence queued — finishing current sequence...\n";
+    }
 }
 
 void SequencePool::requestNext()
@@ -69,8 +71,9 @@ void SequencePool::requestPrevious()
 
 void SequencePool::processTick(VirtualMidiSender& sender, int tick)
 {
-    if (sequences_.empty())
+    if (sequences_.empty()) {
         return;
+    }
 
     Sequence& sequence = current();
     const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
@@ -78,10 +81,12 @@ void SequencePool::processTick(VirtualMidiSender& sender, int tick)
 
     if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
     {
-        if (pendingSwitch_ == PendingSwitch::Next)
+        if (pendingSwitch_ == PendingSwitch::Next) {
             advanceToNext(sender);
-        else
-            advanceToPrevious(sender);
+        }
+        else {
+            advanceToPrevious(sender); 
+        }
     }
 }
 

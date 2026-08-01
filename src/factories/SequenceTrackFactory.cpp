@@ -23,6 +23,8 @@ SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int b
         track.addNote(tick, noteDuration, static_cast<uint8_t>(notes[beat % 4] + 2 * bar), 100, 0, lengthInTicks);
     }
 
+    track.setStartMuted();
+
     return track;
 }
 

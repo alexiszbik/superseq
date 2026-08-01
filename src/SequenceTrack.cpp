@@ -17,8 +17,9 @@ void SequenceTrack::addNote(
     uint8_t channel,
     int maxTick)
 {
-    if (startTick < 0 || durationTicks <= 0)
+    if (startTick < 0 || durationTicks <= 0) {
         throw std::invalid_argument("Invalid note timing");
+    }
 
     addEvent({ startTick, channel, note, velocity, true }, maxTick);
     addEvent({ startTick + durationTicks, channel, note, 0, false }, maxTick);
@@ -52,6 +53,7 @@ void SequenceTrack::reset()
 {
     nextEventIndex_ = 0;
     activeNotes_.clear();
+    muted_ = startMuted_;
 }
 
 void SequenceTrack::setMuted(bool muted, VirtualMidiSender& sender)

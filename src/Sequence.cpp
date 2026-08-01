@@ -7,7 +7,7 @@
 Sequence::Sequence(int barCount, int beatsPerBar, int barLoop, int beatDuration)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
-    , beatDuration_(beatDuration)
+    , beatDuration_(beatDuration) 
 {
     if (barCount_ <= 0) {
         throw std::invalid_argument("Sequence bar count must be positive");

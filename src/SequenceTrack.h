@@ -26,6 +26,8 @@ public:
     bool isMuted() const noexcept { return muted_; }
     void setMuted(bool muted, VirtualMidiSender& sender);
 
+    void setStartMuted() { startMuted_ = true; }
+
     void addNote(
         int startTick,
         int durationTicks,
@@ -33,6 +35,7 @@ public:
         uint8_t velocity,
         uint8_t channel,
         int maxTick);
+
     void addEvent(const Event& event, int maxTick);
 
     void reset();
@@ -54,6 +57,7 @@ private:
     std::string name_;
     bool muted_ = false;
 
+    bool startMuted_ = false;
     std::vector<Event> events_;
     std::vector<ActiveNote> activeNotes_;
     std::size_t nextEventIndex_ = 0;
