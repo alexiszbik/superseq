@@ -28,29 +28,42 @@ inline void makeSequenceTrack(SequenceTrack& track, SequenceDesc desc, int lengt
     int seqIdx = 0;
 
     const int velSize = desc.velocities.size();
+    int velIdx = 0;
+
     const int durationSize = desc.durations.size();
+    int durIdx = 0;
 
     for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
     {
-
         int noteDuration = stepDuration; // no overlap ?
         const std::vector<uint8_t> notes = desc.notes[seqIdx];
 
-        uint8_t velocity = 127;
-        if (seqIdx < velSize) {
-            velocity = desc.velocities[seqIdx];
+        uint8_t velocity = 127; //Default velocity is 127
+        if (velIdx < velSize) {
+            velocity = desc.velocities[velIdx];
         }
 
-        if (seqIdx < durationSize) {
-            noteDuration *= desc.durations[seqIdx];
+        if (durIdx < durationSize) {
+            noteDuration *= desc.durations[durIdx];
         }
+
+        bool noteExists = false;
 
         for (auto& note : notes) {
             track.addNote(tick, noteDuration, note, velocity, desc.channel);
+            noteExists = true;
         }
 
         seqIdx++;
         if (seqIdx >= seqSize) seqIdx = 0;
+
+        if (noteExists) {
+            velIdx++;
+            if (velIdx >= velSize) velIdx = 0;
+
+            durIdx++;
+            if (durIdx >= durationSize) durIdx = 0;
+        }
     }
 }
 
@@ -226,11 +239,7 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
         {},  {67, 72, 75}, {}, {},
         {},  {65, 69, 72}, {}, {}};
 
-    desc.durations = {
-        0, 4, 0, 0, 
-        0, 4, 0, 0,
-        0, 4, 0, 0,
-        0, 4, 0, 0};
+    desc.durations = {3, 4};
         
     desc.rate = 4;
     desc.channel = 0;
