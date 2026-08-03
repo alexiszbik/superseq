@@ -102,7 +102,7 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int bea
     SequenceTrack track("Am7 Arpeggio");
 
     SequenceDesc desc;
-    desc.channel = 0;
+    desc.channel = MidiChannel::kModularA;
     desc.notes = {{57}, {60}, {64}, {67}};
     desc.velocities = {95};
     desc.rate = 4;
@@ -185,13 +185,20 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
 
     SequenceDesc desc;
     desc.channel = MidiChannel::kDrums;
+
     desc.notes = {
         {42}, {}, {42}, {},
         {42}, {46}, {42}, {},
         {42}, {}, {42}, {46},
         {42}, {}, {42}, {},
     };
-    desc.velocities = {80, 100, 120, 140};
+
+    desc.velocities = {
+        100, 80, 
+        100, 80, 80, 
+        100, 80, 100, 
+        100, 80};
+
     desc.rate = 16;
     makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 

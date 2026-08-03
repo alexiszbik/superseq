@@ -1,14 +1,23 @@
 #include "Sequence.h"
 
+#include "StringHelper.h"
+
 #include <stdexcept>
 #include <string>
 #include <utility>
 
-Sequence::Sequence(int barCount, int beatsPerBar, int barLoop, int beatDuration)
+Sequence::Sequence(
+    const char* name,
+    int barCount,
+    int beatsPerBar,
+    int barLoop,
+    int beatDuration)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
-    , beatDuration_(beatDuration) 
+    , beatDuration_(beatDuration)
 {
+    StringHelper::copyName(name_, name);
+
     if (barCount_ <= 0) {
         throw std::invalid_argument("Sequence bar count must be positive");
     }

@@ -19,16 +19,17 @@ FetchContent_MakeAvailable(rtmidi)
 add_executable(ProtoSeq
     src/main.cpp
     src/MidiClock.cpp
-    src/Sequence.cpp
-    src/SequencePool.cpp
-    src/SequenceTrack.cpp
-    src/TransportPosition.cpp
     src/VirtualMidiSender.cpp
-    src/factories/SequenceFactory.cpp
-    src/factories/SequenceTrackFactory.cpp
+    src/engine/StringHelper.cpp
+    src/engine/Sequence.cpp
+    src/engine/SequencePool.cpp
+    src/engine/SequenceTrack.cpp
+    src/engine/TransportPosition.cpp
+    src/engine/factories/SequenceFactory.cpp
+    src/engine/factories/SequenceTrackFactory.cpp
 )
 
-target_include_directories(ProtoSeq PRIVATE src)
+target_include_directories(ProtoSeq PRIVATE src src/engine)
 target_link_libraries(ProtoSeq PRIVATE rtmidi)
 
 if(APPLE)

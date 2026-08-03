@@ -1,25 +1,17 @@
 #include "SequenceTrack.h"
 
-#include <stdexcept>
-#include <utility>
+#include "StringHelper.h"
 
-SequenceTrack::SequenceTrack(std::string name)
-    : name_(std::move(name))
+#include <stdexcept>
+
+SequenceTrack::SequenceTrack(const char* name)
 {
+    StringHelper::copyName(name_, name);
 }
 
 void SequenceTrack::attachMidi(MidiInOut& midi)
 {
     midi_ = &midi;
-}
-
-MidiInOut& SequenceTrack::midi()
-{
-    if (!midi_) {
-        throw std::logic_error("SequenceTrack: MIDI not attached");
-    }
-
-    return *midi_;
 }
 
 void SequenceTrack::addNote(
@@ -88,7 +80,7 @@ void SequenceTrack::setMuted(bool muted)
 
 void SequenceTrack::startNote(const Note& note)
 {
-    midi().sendNoteOn(note.channel, note.note, note.velocity);
+    midi_->sendNoteOn(note.channel, note.note, note.velocity);
     activeNotes_.push_back({ note.channel, note.note, note.durationTicks });
 }
 
@@ -99,7 +91,7 @@ void SequenceTrack::tickActiveNotes()
         --it->remainingTicks;
 
         if (it->remainingTicks <= 0) {
-            midi().sendNoteOff(it->channel, it->note, 0);
+            midi_->sendNoteOff(it->channel, it->note, 0);
             it = activeNotes_.erase(it);
         } else {
             ++it;
@@ -110,7 +102,7 @@ void SequenceTrack::tickActiveNotes()
 void SequenceTrack::releaseActiveNotes()
 {
     for (const ActiveNote& activeNote : activeNotes_) {
-        midi().sendNoteOff(activeNote.channel, activeNote.note, 0);
+        midi_->sendNoteOff(activeNote.channel, activeNote.note, 0);
     }
 
     activeNotes_.clear();
@@ -120,11 +112,11 @@ void SequenceTrack::processTick(int position, bool loopWrap)
 {
     if (!muted_) {
         programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {
-            midi().sendProgramChange(change.channel, change.program);
+            midi_->sendProgramChange(change.channel, change.program);
         });
 
         controlChanges_.process(position, loopWrap, [this](const ControlChange& change) {
-            midi().sendControlChange(change.channel, change.controller, change.value);
+            midi_->sendControlChange(change.channel, change.controller, change.value);
         });
 
         notes_.process(position, loopWrap, [this](const Note& note) {

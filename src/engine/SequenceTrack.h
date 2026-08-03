@@ -1,21 +1,21 @@
 #pragma once
 
 #include "ControlChange.h"
+#include "StringHelper.h"
 #include "MidiInOut.h"
 #include "Note.h"
 #include "ProgramChange.h"
 #include "TimedEventList.h"
 
 #include <cstdint>
-#include <string>
 #include <vector>
 
 class SequenceTrack
 {
 public:
-    explicit SequenceTrack(std::string name = {});
+    explicit SequenceTrack(const char* name = "");
 
-    const std::string& name() const noexcept { return name_; }
+    const char* name() const noexcept { return name_; }
 
     void attachMidi(MidiInOut& midi);
 
@@ -54,12 +54,10 @@ private:
         int remainingTicks = 0;
     };
 
-    MidiInOut& midi();
-
     void startNote(const Note& note);
     void tickActiveNotes();
 
-    std::string name_;
+    StringHelper::NameBuffer name_ = {};
 
     bool muted_ = false;
     bool startMuted_ = false;

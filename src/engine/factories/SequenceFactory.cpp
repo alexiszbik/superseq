@@ -6,9 +6,15 @@ namespace
 {
 using TrackBuilder = SequenceTrack (*)(int lengthInTicks, int beatDuration);
 
-Sequence buildSequence(int barCount, int beatsPerBar, int barLoop, TrackBuilder first, TrackBuilder second)
+Sequence buildSequence(
+    int barCount,
+    int beatsPerBar,
+    int barLoop,
+    const char* name,
+    TrackBuilder first,
+    TrackBuilder second)
 {
-    Sequence sequence(barCount, beatsPerBar, barLoop);
+    Sequence sequence(name, barCount, beatsPerBar, barLoop, Sequence::kTicksPerQuarterNote);
     const int length = sequence.lengthInTicks();
     const int beatDuration = sequence.beatDuration();
 
@@ -22,17 +28,15 @@ Sequence buildSequence(int barCount, int beatsPerBar, int barLoop, TrackBuilder 
 Sequence SequenceFactory::createSequenceOne(int barCount)
 {
     return buildSequence(
-        barCount, 4, 0,
+        barCount, 4, 0, "Kick/Hats + Pads",
         SequenceTrackFactory::createKickSnareWithHats,
         SequenceTrackFactory::createPadChords);
 }
 
 Sequence SequenceFactory::createSequenceTwo(int barCount)
 {
-
-
     return buildSequence(
-        barCount, 4, 2,
+        barCount, 4, 2, "Cmaj7 + Four on Floor",
         SequenceTrackFactory::createCMaj7Arpeggio,
         SequenceTrackFactory::createFourOnFloorKick);
 }
@@ -40,7 +44,7 @@ Sequence SequenceFactory::createSequenceTwo(int barCount)
 Sequence SequenceFactory::createSequenceThree(int barCount)
 {
     return buildSequence(
-        barCount, 4, 0,
+        barCount, 4, 0, "Am7 + Hi-Hat",
         SequenceTrackFactory::createAm7Arpeggio,
         SequenceTrackFactory::createHiHatPattern);
 }
@@ -48,7 +52,7 @@ Sequence SequenceFactory::createSequenceThree(int barCount)
 Sequence SequenceFactory::createSequenceFour(int barCount)
 {
     return buildSequence(
-        barCount, 4, 0,
+        barCount, 4, 0, "Pads + Kick/Snare",
         SequenceTrackFactory::createPadChords,
         SequenceTrackFactory::createKickSnare);
 }
@@ -56,7 +60,7 @@ Sequence SequenceFactory::createSequenceFour(int barCount)
 Sequence SequenceFactory::createSequenceFive(int barCount)
 {
     return buildSequence(
-        barCount, 4, 1,
+        barCount, 4, 1, "Melodic Bass + Snare",
         SequenceTrackFactory::createMelodicBass,
         SequenceTrackFactory::createSnareBackbeat);
 }
@@ -64,7 +68,7 @@ Sequence SequenceFactory::createSequenceFive(int barCount)
 Sequence SequenceFactory::createSequenceSix(int barCount)
 {
     return buildSequence(
-        barCount, 4, 2,
+        barCount, 4, 2, "Synth Stabs + Kick/Hats",
         SequenceTrackFactory::createSynthStabs,
         SequenceTrackFactory::createKickSnareWithHats);
 }
@@ -72,7 +76,7 @@ Sequence SequenceFactory::createSequenceSix(int barCount)
 Sequence SequenceFactory::createSequenceSeven(int barCount)
 {
     return buildSequence(
-        barCount, 4, 0,
+        barCount, 4, 0, "Clap + Melodic Bass",
         SequenceTrackFactory::createClapBackbeat,
         SequenceTrackFactory::createMelodicBass);
 }

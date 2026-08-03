@@ -1,8 +1,7 @@
 #include "MidiClock.h"
-#include "Sequence.h"
+#include "VirtualMidiSender.h"
 #include "SequencePool.h"
 #include "TransportPosition.h"
-#include "VirtualMidiSender.h"
 
 #include <csignal>
 #include <iostream>
@@ -61,8 +60,10 @@ void printTracks(const Sequence& sequence)
 
 void printPoolStatus(const SequencePool& pool)
 {
-    std::cout << "Sequence " << pool.currentIndex() + 1 << " / " << pool.size() << "\n";
-    printTracks(pool.current());
+    const Sequence& sequence = pool.current();
+    std::cout << "Sequence " << pool.currentIndex() + 1 << " / " << pool.size()
+              << " — " << sequence.name() << "\n";
+    printTracks(sequence);
 }
 
 bool tryMuteTrack(SequencePool& pool, const std::string& argument)
@@ -184,7 +185,8 @@ int main()
         {
             if (clock.isPlaying())
             {
-                std::cout << "[seq " << pool.currentIndex() + 1 << " | "
+                std::cout << "[seq " << pool.currentIndex() + 1 << " "
+                          << pool.current().name() << " | "
                           << pool.current().formatPlayhead() << "] ";
             }
 

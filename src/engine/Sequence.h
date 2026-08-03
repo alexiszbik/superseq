@@ -2,6 +2,7 @@
 
 #include "MidiInOut.h"
 #include "SequenceTrack.h"
+#include "StringHelper.h"
 #include "TransportPosition.h"
 
 #include <cstddef>
@@ -14,10 +15,14 @@ public:
     static constexpr int kTicksPerQuarterNote = 96;
 
     Sequence(
+        const char* name,
         int barCount,
         int beatsPerBar = 4,
         int barLoop = 0,
-        int beatDuration = kTicksPerQuarterNote);
+        int beatDuration = kTicksPerQuarterNote
+        );
+
+    const char* name() const noexcept { return name_; }
 
     int barCount() const noexcept { return barCount_; }
     int beatsPerBar() const noexcept { return beatsPerBar_; }
@@ -57,4 +62,5 @@ public:
 
 private:
     MidiInOut* midi_ = nullptr;
+    StringHelper::NameBuffer name_ = {};
 };

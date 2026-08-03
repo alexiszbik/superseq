@@ -126,6 +126,7 @@ void SequencePool::advanceToNext()
     current().reset();
 
     std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
+              << " — " << current().name()
               << " (" << current().trackCount() << " tracks)\n";
 }
 
@@ -144,6 +145,7 @@ void SequencePool::advanceToPrevious()
     current().reset();
 
     std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
+              << " — " << current().name()
               << " (" << current().trackCount() << " tracks)\n";
 }
 
