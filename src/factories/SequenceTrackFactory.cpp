@@ -8,6 +8,7 @@ struct SequenceDesc {
     uint8_t channel;
 
     std::vector<std::vector<uint8_t>> notes;
+    std::vector<uint8_t> velocities;
     uint8_t rate;
 };
 
@@ -29,12 +30,19 @@ inline SequenceTrack makeSequenceTrack(SequenceDesc desc, int lengthInTicks) {
     const int seqSize = desc.notes.size();
     int seqIdx = 0;
 
+    const int velSize = desc.velocities.size();
+
     for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
     {
         const std::vector<uint8_t> notes = desc.notes[seqIdx];
 
+        uint8_t velocity = 127;
+        if (seqIdx < velSize) {
+            velocity = desc.velocities[seqIdx];
+        }
+
         for (auto& note : notes) {
-            track.addNote(tick, noteDuration, note, 127, desc.channel);
+            track.addNote(tick, noteDuration, note, velocity, desc.channel);
         }
 
         seqIdx++;
@@ -96,41 +104,17 @@ SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatD
 
 SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, int beatDuration)
 {
-    SequenceTrack track("Kick/Snare + Hats");
+    SequenceDesc desc;
+    desc.name = "Hats";
+    desc.notes = {{42}, {42}, {42}, {42}};
+    desc.velocities = {27, 89, 127, 89};
+    desc.rate = 16;
+    desc.channel = kDrumChannel;
 
-    constexpr uint8_t kKickNote = 36;
-    constexpr uint8_t kSnareNote = 37;
-    constexpr uint8_t kHatNote = 42;
+    SequenceTrack t = makeSequenceTrack(desc, lengthInTicks);
+    //t.setStartMuted();
 
-    const int beatCount = lengthInTicks / beatDuration;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        const int tick = beat * beatDuration;
-        const bool isSnare = (beat % 4) == 1 || (beat % 4) == 3;
-
-        if (isSnare)
-            track.addNote(tick, kDefaultHitDuration, kSnareNote, 127, kDrumChannel);
-
-        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel);
-    }
-
-    const int sixteenthDuration = beatDuration / 4;
-    const int sixteenthCount = lengthInTicks / sixteenthDuration;
-    const int hatDuration = sixteenthDuration / 2;
-
-    for (int sixteenth = 0; sixteenth < sixteenthCount; ++sixteenth)
-    {
-        const int velocityStep = (sixteenth + 1) % 4;
-        const int tick = sixteenth * sixteenthDuration;
-        const int velocity = (127 / 4) * (velocityStep + 1);
-
-        track.addNote(tick, hatDuration, kHatNote, static_cast<uint8_t>(velocity), kDrumChannel);
-    }
-
-    track.setStartMuted();
-
-    return track;
+    return t;
 }
 
 SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks, int beatDuration)

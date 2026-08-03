@@ -22,17 +22,19 @@ Sequence buildSequence(int barCount, int beatsPerBar, int barLoop, TrackBuilder 
 Sequence SequenceFactory::createSequenceOne(int barCount)
 {
     return buildSequence(
-        barCount, 4, 2,
-        SequenceTrackFactory::createCMaj7Arpeggio,
-        SequenceTrackFactory::createFourOnFloorKick);
+        barCount, 4, 0,
+        SequenceTrackFactory::createKickSnareWithHats,
+        SequenceTrackFactory::createBassLine);
 }
 
 Sequence SequenceFactory::createSequenceTwo(int barCount)
 {
+
+
     return buildSequence(
-        barCount, 4, 0,
-        SequenceTrackFactory::createKickSnareWithHats,
-        SequenceTrackFactory::createBassLine);
+        barCount, 4, 2,
+        SequenceTrackFactory::createCMaj7Arpeggio,
+        SequenceTrackFactory::createFourOnFloorKick);
 }
 
 Sequence SequenceFactory::createSequenceThree(int barCount)
