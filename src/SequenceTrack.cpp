@@ -1,6 +1,5 @@
 #include "SequenceTrack.h"
 
-#include <algorithm>
 #include <stdexcept>
 #include <utility>
 
@@ -34,8 +33,7 @@ void SequenceTrack::addNote(
         throw std::invalid_argument("Invalid note timing");
     }
 
-    notes_.push_back({ startTick, durationTicks, channel, note, velocity });
-    sortNotes();
+    notes_.add({ startTick, durationTicks, channel, note, velocity });
 }
 
 void SequenceTrack::addControlChange(
@@ -48,8 +46,7 @@ void SequenceTrack::addControlChange(
         throw std::invalid_argument("Invalid control change timing");
     }
 
-    controlChanges_.push_back({ tick, channel, controller, value });
-    sortControlChanges();
+    controlChanges_.add({ tick, channel, controller, value });
 }
 
 void SequenceTrack::addProgramChange(
@@ -61,38 +58,14 @@ void SequenceTrack::addProgramChange(
         throw std::invalid_argument("Invalid program change timing");
     }
 
-    programChanges_.push_back({ tick, channel, program });
-    sortProgramChanges();
-}
-
-void SequenceTrack::sortNotes()
-{
-    std::sort(notes_.begin(), notes_.end(), [](const Note& a, const Note& b) {
-        return a.tick < b.tick;
-    });
-}
-
-void SequenceTrack::sortControlChanges()
-{
-    std::sort(controlChanges_.begin(), controlChanges_.end(),
-        [](const ControlChange& a, const ControlChange& b) {
-            return a.tick < b.tick;
-        });
-}
-
-void SequenceTrack::sortProgramChanges()
-{
-    std::sort(programChanges_.begin(), programChanges_.end(),
-        [](const ProgramChange& a, const ProgramChange& b) {
-            return a.tick < b.tick;
-        });
+    programChanges_.add({ tick, channel, program });
 }
 
 void SequenceTrack::reset()
 {
-    nextNoteIndex_ = 0;
-    nextControlChangeIndex_ = 0;
-    nextProgramChangeIndex_ = 0;
+    notes_.reset();
+    controlChanges_.reset();
+    programChanges_.reset();
     activeNotes_.clear();
     muted_ = startMuted_;
 }
@@ -106,12 +79,10 @@ void SequenceTrack::setMuted(bool muted)
     muted_ = muted;
 
     if (muted) {
-
         releaseActiveNotes();
-        //this might prevent from mute/unmute bug !
-        nextNoteIndex_ = 0;
-        nextControlChangeIndex_ = 0;
-        nextProgramChangeIndex_ = 0;
+        notes_.reset();
+        controlChanges_.reset();
+        programChanges_.reset();
     }
 }
 
@@ -145,71 +116,20 @@ void SequenceTrack::releaseActiveNotes()
     activeNotes_.clear();
 }
 
-void SequenceTrack::processProgramChanges(int position, bool loopWrap)
-{
-    if (loopWrap) {
-        nextProgramChangeIndex_ = 0;
-    }
-
-    while (nextProgramChangeIndex_ < programChanges_.size()
-           && programChanges_[nextProgramChangeIndex_].tick < position)
-    {
-        ++nextProgramChangeIndex_;
-    }
-
-    while (nextProgramChangeIndex_ < programChanges_.size()
-           && programChanges_[nextProgramChangeIndex_].tick == position)
-    {
-        const ProgramChange& change = programChanges_[nextProgramChangeIndex_];
-        midi().sendProgramChange(change.channel, change.program);
-        ++nextProgramChangeIndex_;
-    }
-}
-
-void SequenceTrack::processControlChanges(int position, bool loopWrap)
-{
-    if (loopWrap) {
-        nextControlChangeIndex_ = 0;
-    }
-
-    while (nextControlChangeIndex_ < controlChanges_.size()
-           && controlChanges_[nextControlChangeIndex_].tick < position)
-    {
-        ++nextControlChangeIndex_;
-    }
-
-    while (nextControlChangeIndex_ < controlChanges_.size()
-           && controlChanges_[nextControlChangeIndex_].tick == position)
-    {
-        const ControlChange& change = controlChanges_[nextControlChangeIndex_];
-        midi().sendControlChange(change.channel, change.controller, change.value);
-        ++nextControlChangeIndex_;
-    }
-}
-
-void SequenceTrack::processNotes(int position, bool loopWrap)
-{
-    if (loopWrap) {
-        nextNoteIndex_ = 0;
-    }
-
-    while (nextNoteIndex_ < notes_.size() && notes_[nextNoteIndex_].tick < position) {
-        ++nextNoteIndex_;
-    }
-
-    while (nextNoteIndex_ < notes_.size() && notes_[nextNoteIndex_].tick == position)
-    {
-        startNote(notes_[nextNoteIndex_]);
-        ++nextNoteIndex_;
-    }
-}
-
 void SequenceTrack::processTick(int position, bool loopWrap)
 {
     if (!muted_) {
-        processProgramChanges(position, loopWrap);
-        processControlChanges(position, loopWrap);
-        processNotes(position, loopWrap);
+        programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {
+            midi().sendProgramChange(change.channel, change.program);
+        });
+
+        controlChanges_.process(position, loopWrap, [this](const ControlChange& change) {
+            midi().sendControlChange(change.channel, change.controller, change.value);
+        });
+
+        notes_.process(position, loopWrap, [this](const Note& note) {
+            startNote(note);
+        });
     }
 
     tickActiveNotes();

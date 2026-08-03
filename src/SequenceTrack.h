@@ -4,6 +4,7 @@
 #include "MidiInOut.h"
 #include "Note.h"
 #include "ProgramChange.h"
+#include "TimedEventList.h"
 
 #include <cstdint>
 #include <string>
@@ -55,14 +56,6 @@ private:
 
     MidiInOut& midi();
 
-    void sortNotes();
-    void sortControlChanges();
-    void sortProgramChanges();
-
-    void processProgramChanges(int position, bool loopWrap);
-    void processControlChanges(int position, bool loopWrap);
-    void processNotes(int position, bool loopWrap);
-
     void startNote(const Note& note);
     void tickActiveNotes();
 
@@ -74,11 +67,7 @@ private:
     MidiInOut* midi_ = nullptr;
     std::vector<ActiveNote> activeNotes_;
 
-    std::vector<Note> notes_;
-    std::vector<ControlChange> controlChanges_;
-    std::vector<ProgramChange> programChanges_;
-
-    std::size_t nextNoteIndex_ = 0;
-    std::size_t nextControlChangeIndex_ = 0;
-    std::size_t nextProgramChangeIndex_ = 0;
+    TimedEventList<Note> notes_;
+    TimedEventList<ControlChange> controlChanges_;
+    TimedEventList<ProgramChange> programChanges_;
 };

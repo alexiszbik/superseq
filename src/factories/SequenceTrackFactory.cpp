@@ -1,29 +1,69 @@
 #include "SequenceTrackFactory.h"
 
 #include <cmath>
+#include <vector>
+
+struct SequenceDesc {
+    const char* name;
+    uint8_t channel;
+
+    std::vector<std::vector<uint8_t>> notes;
+    uint8_t rate;
+};
 
 namespace
 {
 constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
 constexpr int kDefaultHitDuration = 10;
+
+constexpr int barDuration = 24 * 4;
 } // namespace
 
-SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int beatDuration)
-{
-    SequenceTrack track("Cmaj7 Arpeggio");
+inline SequenceTrack makeSequenceTrack(SequenceDesc desc, int lengthInTicks) {
 
-    const uint8_t notes[] = { 60, 64, 67, 71 };
-    const int beatCount = lengthInTicks / beatDuration;
-    const int noteDuration = beatDuration - 2;
+    SequenceTrack track(desc.name);
 
-    for (int beat = 0; beat < beatCount; ++beat)
+    const int stepDuration = barDuration/desc.rate;
+    const int noteDuration = stepDuration - 2; //to be modified
+
+    const int seqSize = desc.notes.size();
+    int seqIdx = 0;
+
+    for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
     {
-        const int tick = beat * beatDuration;
-        const int bar = static_cast<int>(std::floor(beat / 4.0));
-        track.addNote(tick, noteDuration, static_cast<uint8_t>(notes[beat % 4] + 2 * bar), 100, 0);
+        const std::vector<uint8_t> notes = desc.notes[seqIdx];
+
+        for (auto& note : notes) {
+            track.addNote(tick, noteDuration, note, 127, desc.channel);
+        }
+
+        seqIdx++;
+        if (seqIdx >= seqSize) seqIdx = 0;
     }
 
     return track;
+}
+
+SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int beatDuration)
+{
+    SequenceDesc desc;
+    desc.name = "Four On Floor";
+    desc.notes = {{36}, {36}, {36}, {36}};
+    desc.rate = 4;
+    desc.channel = kDrumChannel;
+
+    return makeSequenceTrack(desc, lengthInTicks);
+}
+
+SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int beatDuration)
+{
+    SequenceDesc desc;
+    desc.name = "CM7 arpeggios";
+    desc.notes = {{60}, {64}, {67}, {71}};
+    desc.rate = 4;
+    desc.channel = 0;
+
+    return makeSequenceTrack(desc, lengthInTicks);
 }
 
 SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int beatDuration)
@@ -45,23 +85,13 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int bea
 
 SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatDuration)
 {
-    SequenceTrack track("Kick/Snare");
+    SequenceDesc desc;
+    desc.name = "Kick Snare";
+    desc.notes = {{36}, {36,37}, {36}, {36,37}};
+    desc.rate = 4;
+    desc.channel = kDrumChannel;
 
-    constexpr uint8_t kKickNote = 36;
-    constexpr uint8_t kSnareNote = 38;
-
-    const int beatCount = lengthInTicks / beatDuration;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        const int tick = beat * beatDuration;
-        const bool isKickBeat = (beat % 4) == 0 || (beat % 4) == 2;
-        const uint8_t note = isKickBeat ? kKickNote : kSnareNote;
-
-        track.addNote(tick, kDefaultHitDuration, note, 127, kDrumChannel);
-    }
-
-    return track;
+    return makeSequenceTrack(desc, lengthInTicks);
 }
 
 SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, int beatDuration)
@@ -160,23 +190,6 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
         const uint8_t velocity = static_cast<uint8_t>(80 + (sixteenth % 4) * 10);
 
         track.addNote(tick, noteLength, kHatNote, velocity, kDrumChannel);
-    }
-
-    return track;
-}
-
-SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int beatDuration)
-{
-    SequenceTrack track("Four On Floor");
-
-    constexpr uint8_t kKickNote = 36;
-
-    const int beatCount = lengthInTicks / beatDuration;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kKickNote, 127, kDrumChannel);
     }
 
     return track;

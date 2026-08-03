@@ -6,17 +6,6 @@ namespace
 {
 using TrackBuilder = SequenceTrack (*)(int lengthInTicks, int beatDuration);
 
-Sequence buildSequence(int barCount, int beatsPerBar, int barLoop, TrackBuilder trackBuilder)
-{
-    Sequence sequence(barCount, beatsPerBar, barLoop);
-    const int length = sequence.lengthInTicks();
-    const int beatDuration = sequence.beatDuration();
-
-    sequence.addTrack(trackBuilder(length, beatDuration));
-
-    return sequence;
-}
-
 Sequence buildSequence(int barCount, int beatsPerBar, int barLoop, TrackBuilder first, TrackBuilder second)
 {
     Sequence sequence(barCount, beatsPerBar, barLoop);
@@ -35,7 +24,7 @@ Sequence SequenceFactory::createSequenceOne(int barCount)
     return buildSequence(
         barCount, 4, 2,
         SequenceTrackFactory::createCMaj7Arpeggio,
-        SequenceTrackFactory::createKickSnare);
+        SequenceTrackFactory::createFourOnFloorKick);
 }
 
 Sequence SequenceFactory::createSequenceTwo(int barCount)
@@ -59,7 +48,7 @@ Sequence SequenceFactory::createSequenceFour(int barCount)
     return buildSequence(
         barCount, 4, 0,
         SequenceTrackFactory::createPadChords,
-        SequenceTrackFactory::createFourOnFloorKick);
+        SequenceTrackFactory::createKickSnare);
 }
 
 Sequence SequenceFactory::createSequenceFive(int barCount)
