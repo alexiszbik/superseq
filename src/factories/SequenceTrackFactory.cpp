@@ -4,7 +4,6 @@
 #include <vector>
 
 struct SequenceDesc {
-    const char* name;
     uint8_t channel;
 
     std::vector<std::vector<uint8_t>> notes;
@@ -20,9 +19,7 @@ constexpr int kDefaultHitDuration = 10;
 constexpr int barDuration = 24 * 4;
 } // namespace
 
-inline SequenceTrack makeSequenceTrack(SequenceDesc desc, int lengthInTicks) {
-
-    SequenceTrack track(desc.name);
+inline void makeSequenceTrack(SequenceTrack& track, SequenceDesc desc, int lengthInTicks) {
 
     const int stepDuration = barDuration/desc.rate;
     const int noteDuration = stepDuration - 2; //to be modified
@@ -48,30 +45,32 @@ inline SequenceTrack makeSequenceTrack(SequenceDesc desc, int lengthInTicks) {
         seqIdx++;
         if (seqIdx >= seqSize) seqIdx = 0;
     }
-
-    return track;
 }
 
 SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int beatDuration)
 {
+    SequenceTrack track("Four On Floor");
+
     SequenceDesc desc;
-    desc.name = "Four On Floor";
     desc.notes = {{36}, {36}, {36}, {36}};
     desc.rate = 4;
     desc.channel = kDrumChannel;
 
-    return makeSequenceTrack(desc, lengthInTicks);
+    makeSequenceTrack(track, desc, lengthInTicks);
+    return track;
 }
 
 SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int beatDuration)
 {
+    SequenceTrack track("CM7 arpeggios");
+
     SequenceDesc desc;
-    desc.name = "CM7 arpeggios";
     desc.notes = {{60}, {64}, {67}, {71}};
     desc.rate = 4;
     desc.channel = 0;
 
-    return makeSequenceTrack(desc, lengthInTicks);
+    makeSequenceTrack(track, desc, lengthInTicks);
+    return track;
 }
 
 SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int beatDuration)
@@ -93,28 +92,37 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int bea
 
 SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatDuration)
 {
+    SequenceTrack track("Kick Snare");
+    
     SequenceDesc desc;
-    desc.name = "Kick Snare";
     desc.notes = {{36}, {36,37}, {36}, {36,37}};
     desc.rate = 4;
     desc.channel = kDrumChannel;
 
-    return makeSequenceTrack(desc, lengthInTicks);
+    makeSequenceTrack(track, desc, lengthInTicks);
+    return track;
 }
 
 SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, int beatDuration)
 {
+    SequenceTrack track("Hats");
+
     SequenceDesc desc;
-    desc.name = "Hats";
     desc.notes = {{42}, {42}, {42}, {42}};
     desc.velocities = {27, 89, 127, 89};
     desc.rate = 16;
     desc.channel = kDrumChannel;
 
-    SequenceTrack t = makeSequenceTrack(desc, lengthInTicks);
-    //t.setStartMuted();
+    makeSequenceTrack(track, desc, lengthInTicks);
 
-    return t;
+    SequenceDesc desc2;
+    desc2.notes = {{36}, {36,37}, {36}, {36,37}};
+    desc2.rate = 4;
+    desc2.channel = kDrumChannel;
+    makeSequenceTrack(track, desc2, lengthInTicks);
+    //track.setStartMuted();
+
+    return track;
 }
 
 SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks, int beatDuration)
