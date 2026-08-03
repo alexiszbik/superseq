@@ -1,44 +1,45 @@
 #include "SequenceTrackFactory.h"
 
-#include <cmath>
+#include <cstdint>
 #include <vector>
 
-struct SequenceDesc {
-    uint8_t channel;
+namespace
+{
+constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
 
+struct SequenceDesc
+{
+    uint8_t channel = 0;
     std::vector<std::vector<uint8_t>> notes;
     std::vector<uint8_t> velocities;
     std::vector<uint8_t> durations;
     uint8_t rate = 4;
 };
 
-namespace
+void makeSequenceTrack(
+    SequenceTrack& track,
+    const SequenceDesc& desc,
+    int lengthInTicks,
+    int beatDuration)
 {
-constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
-constexpr int kDefaultHitDuration = 10;
+    const int barDuration = beatDuration * 4;
+    const int stepDuration = barDuration / desc.rate;
 
-constexpr int barDuration = 24 * 4;
-} // namespace
-
-inline void makeSequenceTrack(SequenceTrack& track, SequenceDesc desc, int lengthInTicks) {
-
-    const int stepDuration = barDuration/desc.rate;
-
-    const int seqSize = desc.notes.size();
+    const int seqSize = static_cast<int>(desc.notes.size());
     int seqIdx = 0;
 
-    const int velSize = desc.velocities.size();
+    const int velSize = static_cast<int>(desc.velocities.size());
     int velIdx = 0;
 
-    const int durationSize = desc.durations.size();
+    const int durationSize = static_cast<int>(desc.durations.size());
     int durIdx = 0;
 
     for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
     {
-        int noteDuration = stepDuration; // no overlap ?
-        const std::vector<uint8_t> notes = desc.notes[seqIdx];
+        int noteDuration = stepDuration;
+        const std::vector<uint8_t>& stepNotes = desc.notes[seqIdx];
 
-        uint8_t velocity = 127; //Default velocity is 127
+        uint8_t velocity = 127;
         if (velIdx < velSize) {
             velocity = desc.velocities[velIdx];
         }
@@ -49,47 +50,50 @@ inline void makeSequenceTrack(SequenceTrack& track, SequenceDesc desc, int lengt
 
         bool noteExists = false;
 
-        for (auto& note : notes) {
+        for (uint8_t note : stepNotes) {
             track.addNote(tick, noteDuration, note, velocity, desc.channel);
             noteExists = true;
         }
 
-        seqIdx++;
-        if (seqIdx >= seqSize) seqIdx = 0;
+        seqIdx = (seqIdx + 1) % seqSize;
 
         if (noteExists) {
-            velIdx++;
-            if (velIdx >= velSize) velIdx = 0;
+            if (velSize > 0) {
+                velIdx = (velIdx + 1) % velSize;
+            }
 
-            durIdx++;
-            if (durIdx >= durationSize) durIdx = 0;
+            if (durationSize > 0) {
+                durIdx = (durIdx + 1) % durationSize;
+            }
         }
     }
 }
+
+} // namespace
 
 SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int beatDuration)
 {
     SequenceTrack track("Four On Floor");
 
     SequenceDesc desc;
+    desc.channel = kDrumChannel;
     desc.notes = {{36}, {36}, {36}, {36}};
     desc.rate = 4;
-    desc.channel = kDrumChannel;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
-    makeSequenceTrack(track, desc, lengthInTicks);
     return track;
 }
 
 SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int beatDuration)
 {
-    SequenceTrack track("CM7 arpeggios");
+    SequenceTrack track("Cmaj7 Arpeggio");
 
     SequenceDesc desc;
+    desc.channel = 0;
     desc.notes = {{60}, {64}, {67}, {71}};
     desc.rate = 4;
-    desc.channel = 0;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
-    makeSequenceTrack(track, desc, lengthInTicks);
     return track;
 }
 
@@ -97,50 +101,48 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks, int bea
 {
     SequenceTrack track("Am7 Arpeggio");
 
-    const uint8_t notes[] = { 57, 60, 64, 67 }; // A C E G
-    const int beatCount = lengthInTicks / beatDuration;
-    const int noteDuration = beatDuration - 2;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        const int tick = beat * beatDuration;
-        track.addNote(tick, noteDuration, notes[beat % 4], 95, 0);
-    }
+    SequenceDesc desc;
+    desc.channel = 0;
+    desc.notes = {{57}, {60}, {64}, {67}};
+    desc.velocities = {95};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
 
 SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatDuration)
 {
-    SequenceTrack track("Kick Snare");
-    
-    SequenceDesc desc;
-    desc.notes = {{36}, {36,37}, {36}, {36,37}};
-    desc.rate = 4;
-    desc.channel = kDrumChannel;
+    SequenceTrack track("Kick/Snare");
 
-    makeSequenceTrack(track, desc, lengthInTicks);
+    SequenceDesc desc;
+    desc.channel = kDrumChannel;
+    desc.notes = {{36}, {36, 38}, {36}, {36, 38}};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
+
     return track;
 }
 
 SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, int beatDuration)
 {
-    SequenceTrack track("Hats");
+    SequenceTrack track("Kick/Snare + Hats");
 
-    SequenceDesc desc;
-    desc.notes = {{42}, {42}, {42}, {42}};
-    desc.velocities = {27, 89, 127, 89};
-    desc.rate = 16;
-    desc.channel = kDrumChannel;
+    SequenceDesc hats;
+    hats.channel = kDrumChannel;
+    hats.notes = {{42}, {42}, {42}, {42}, {42}, {42}, {42}, {42},
+                  {42}, {42}, {42}, {42}, {42}, {42}, {42}, {42}};
+    hats.velocities = {32, 64, 96, 127, 32, 64, 96, 127};
+    hats.rate = 16;
+    makeSequenceTrack(track, hats, lengthInTicks, beatDuration);
 
-    makeSequenceTrack(track, desc, lengthInTicks);
+    SequenceDesc drums;
+    drums.channel = kDrumChannel;
+    drums.notes = {{36}, {36, 37}, {36}, {36, 37}};
+    drums.rate = 4;
+    makeSequenceTrack(track, drums, lengthInTicks, beatDuration);
 
-    SequenceDesc desc2;
-    desc2.notes = {{36}, {36,37}, {36}, {36,37}};
-    desc2.rate = 4;
-    desc2.channel = kDrumChannel;
-    makeSequenceTrack(track, desc2, lengthInTicks);
-    //track.setStartMuted();
+    track.setStartMuted();
 
     return track;
 }
@@ -149,18 +151,17 @@ SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks, int beatDu
 {
     SequenceTrack track("Bassline");
 
-    const int sixteenthDuration = beatDuration / 4;
-    const int sixteenthCount = lengthInTicks / sixteenthDuration;
-    const int noteLength = sixteenthDuration - 2;
-
-    for (int sixteenth = 0; sixteenth < sixteenthCount; ++sixteenth)
-    {
-        const int tick = sixteenth * sixteenthDuration;
-        const int bar = sixteenth / 16;
-        const uint8_t note = (bar == 3) ? static_cast<uint8_t>(48) : static_cast<uint8_t>(36);
-
-        track.addNote(tick, noteLength, note, 100, 0);
-    }
+    SequenceDesc desc;
+    desc.channel = 0;
+    desc.notes = {
+        {36}, {36}, {36}, {36},
+        {36}, {36}, {36}, {36},
+        {36}, {36}, {36}, {36},
+        {48}, {48}, {48}, {48},
+    };
+    desc.velocities = {100};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
@@ -169,16 +170,12 @@ SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks, int bea
 {
     SequenceTrack track("Melodic Bass");
 
-    const uint8_t notes[] = { 36, 36, 43, 41, 38, 38, 43, 41 };
-    const int eighthDuration = beatDuration / 2;
-    const int eighthCount = lengthInTicks / eighthDuration;
-    const int noteLength = eighthDuration - 2;
-
-    for (int eighth = 0; eighth < eighthCount; ++eighth)
-    {
-        const int tick = eighth * eighthDuration;
-        track.addNote(tick, noteLength, notes[eighth % 8], 110, 0);
-    }
+    SequenceDesc desc;
+    desc.channel = 0;
+    desc.notes = {{36}, {36}, {43}, {41}, {38}, {38}, {43}, {41}};
+    desc.velocities = {110};
+    desc.rate = 8;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
@@ -187,22 +184,17 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
 {
     SequenceTrack track("Hi-Hat");
 
-    constexpr uint8_t kHatNote = 42;
-
-    const int sixteenthDuration = beatDuration / 4;
-    const int sixteenthCount = lengthInTicks / sixteenthDuration;
-    const int noteLength = sixteenthDuration - 2;
-
-    for (int sixteenth = 0; sixteenth < sixteenthCount; ++sixteenth)
-    {
-        if (sixteenth % 2 != 0)
-            continue;
-
-        const int tick = sixteenth * sixteenthDuration;
-        const uint8_t velocity = static_cast<uint8_t>(80 + (sixteenth % 4) * 10);
-
-        track.addNote(tick, noteLength, kHatNote, velocity, kDrumChannel);
-    }
+    SequenceDesc desc;
+    desc.channel = kDrumChannel;
+    desc.notes = {
+        {42}, {}, {42}, {},
+        {42}, {}, {42}, {},
+        {42}, {}, {42}, {},
+        {42}, {}, {42}, {},
+    };
+    desc.velocities = {80, 100, 120, 140};
+    desc.rate = 16;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
@@ -211,18 +203,12 @@ SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks, int b
 {
     SequenceTrack track("Snare Backbeat");
 
-    constexpr uint8_t kSnareNote = 37;
-
-    const int beatCount = lengthInTicks / beatDuration;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        if ((beat % 4) != 1 && (beat % 4) != 3)
-            continue;
-
-        const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kSnareNote, 120, kDrumChannel);
-    }
+    SequenceDesc desc;
+    desc.channel = kDrumChannel;
+    desc.notes = {{}, {37}, {}, {37}};
+    desc.velocities = {120};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
@@ -232,19 +218,18 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
     SequenceTrack track("Pad Chords");
 
     SequenceDesc desc;
-
-    desc.notes = {
-        {},  {60, 64, 67}, {}, {}, 
-        {},  {65, 69, 72}, {}, {},
-        {},  {67, 72, 75}, {}, {},
-        {},  {65, 69, 72}, {}, {}};
-
-    desc.durations = {3, 4};
-        
-    desc.rate = 4;
     desc.channel = 0;
+    desc.notes = {
+        {}, {60, 64, 67}, {}, {},
+        {}, {65, 69, 72}, {}, {},
+        {}, {67, 72, 75}, {}, {},
+        {}, {60, 64, 67}, {}, {},
+    };
+    desc.velocities = {70};
+    desc.durations = {3};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
-    makeSequenceTrack(track, desc, lengthInTicks);
     return track;
 }
 
@@ -252,19 +237,12 @@ SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks, int beat
 {
     SequenceTrack track("Synth Stabs");
 
-    const uint8_t notes[] = { 72, 74, 76, 77 };
-    const int eighthDuration = beatDuration / 2;
-    const int eighthCount = lengthInTicks / eighthDuration;
-    const int noteLength = eighthDuration - 2;
-
-    for (int eighth = 0; eighth < eighthCount; ++eighth)
-    {
-        if (eighth % 2 == 0)
-            continue;
-
-        const int tick = eighth * eighthDuration;
-        track.addNote(tick, noteLength, notes[(eighth / 2) % 4], 105, 0);
-    }
+    SequenceDesc desc;
+    desc.channel = 0;
+    desc.notes = {{}, {72}, {}, {74}, {}, {76}, {}, {77}};
+    desc.velocities = {105};
+    desc.rate = 8;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
@@ -273,18 +251,12 @@ SequenceTrack SequenceTrackFactory::createClapBackbeat(int lengthInTicks, int be
 {
     SequenceTrack track("Clap");
 
-    constexpr uint8_t kClapNote = 39;
-
-    const int beatCount = lengthInTicks / beatDuration;
-
-    for (int beat = 0; beat < beatCount; ++beat)
-    {
-        if ((beat % 4) != 1 && (beat % 4) != 3)
-            continue;
-
-        const int tick = beat * beatDuration;
-        track.addNote(tick, kDefaultHitDuration, kClapNote, 115, kDrumChannel);
-    }
+    SequenceDesc desc;
+    desc.channel = kDrumChannel;
+    desc.notes = {{}, {39}, {}, {39}};
+    desc.velocities = {115};
+    desc.rate = 4;
+    makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
 
     return track;
 }
