@@ -24,7 +24,7 @@ Sequence SequenceFactory::createSequenceOne(int barCount)
     return buildSequence(
         barCount, 4, 0,
         SequenceTrackFactory::createKickSnareWithHats,
-        SequenceTrackFactory::createBassLine);
+        SequenceTrackFactory::createPadChords);
 }
 
 Sequence SequenceFactory::createSequenceTwo(int barCount)

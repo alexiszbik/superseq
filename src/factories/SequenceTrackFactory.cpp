@@ -8,7 +8,8 @@ struct SequenceDesc {
 
     std::vector<std::vector<uint8_t>> notes;
     std::vector<uint8_t> velocities;
-    uint8_t rate;
+    std::vector<uint8_t> durations;
+    uint8_t rate = 4;
 };
 
 namespace
@@ -22,20 +23,26 @@ constexpr int barDuration = 24 * 4;
 inline void makeSequenceTrack(SequenceTrack& track, SequenceDesc desc, int lengthInTicks) {
 
     const int stepDuration = barDuration/desc.rate;
-    const int noteDuration = stepDuration - 2; //to be modified
 
     const int seqSize = desc.notes.size();
     int seqIdx = 0;
 
     const int velSize = desc.velocities.size();
+    const int durationSize = desc.durations.size();
 
     for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
     {
+
+        int noteDuration = stepDuration; // no overlap ?
         const std::vector<uint8_t> notes = desc.notes[seqIdx];
 
         uint8_t velocity = 127;
         if (seqIdx < velSize) {
             velocity = desc.velocities[seqIdx];
+        }
+
+        if (seqIdx < durationSize) {
+            noteDuration *= desc.durations[seqIdx];
         }
 
         for (auto& note : notes) {
@@ -211,21 +218,24 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
 {
     SequenceTrack track("Pad Chords");
 
-    const uint8_t barRoots[] = { 60, 65, 67, 60 }; // C F G C
-    const int ticksPerBar = beatDuration * 4;
-    const int barCount = lengthInTicks / ticksPerBar;
-    const int chordDuration = ticksPerBar - 2;
+    SequenceDesc desc;
 
-    for (int bar = 0; bar < barCount; ++bar)
-    {
-        const int tick = bar * ticksPerBar + 48;
-        const uint8_t root = barRoots[bar % 4];
+    desc.notes = {
+        {},  {60, 64, 67}, {}, {}, 
+        {},  {65, 69, 72}, {}, {},
+        {},  {67, 72, 75}, {}, {},
+        {},  {65, 69, 72}, {}, {}};
 
-        track.addNote(tick, chordDuration, root, 70, 0);
-        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 4), 70, 0);
-        track.addNote(tick, chordDuration, static_cast<uint8_t>(root + 7), 70, 0);
-    }
+    desc.durations = {
+        0, 4, 0, 0, 
+        0, 4, 0, 0,
+        0, 4, 0, 0,
+        0, 4, 0, 0};
+        
+    desc.rate = 4;
+    desc.channel = 0;
 
+    makeSequenceTrack(track, desc, lengthInTicks);
     return track;
 }
 
