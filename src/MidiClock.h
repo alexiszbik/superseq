@@ -13,7 +13,7 @@
 class MidiClock
 {
 public:
-    static constexpr int kPulsesPerQuarterNote = 24;
+    static constexpr int kPulsesPerQuarterNote = 96;
 
     using TickCallback = std::function<void(int tick)>;
     using TransportCallback = std::function<void()>;

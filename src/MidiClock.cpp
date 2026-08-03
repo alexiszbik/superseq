@@ -143,10 +143,14 @@ void MidiClock::run()
                 onTick = onTick_;
             }
 
-            if (onTick)
+            if (onTick) {
                 onTick(tick);
+            }
 
-            midi_.sendClock();
+            if (tick % 4 == 0) {
+                midi_.sendClock();
+            }
+
             currentTick_.store(tick + 1);
 
             nextTick += tickInterval();

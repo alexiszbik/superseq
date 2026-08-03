@@ -11,7 +11,7 @@
 class Sequence
 {
 public:
-    static constexpr int kTicksPerQuarterNote = 24;
+    static constexpr int kTicksPerQuarterNote = 96;
 
     Sequence(
         int barCount,

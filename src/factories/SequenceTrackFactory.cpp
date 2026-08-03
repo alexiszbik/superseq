@@ -130,8 +130,7 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, i
 
     SequenceDesc hats;
     hats.channel = kDrumChannel;
-    hats.notes = {{42}, {42}, {42}, {42}, {42}, {42}, {42}, {42},
-                  {42}, {42}, {42}, {42}, {42}, {42}, {42}, {42}};
+    hats.notes = {{42}};
     hats.velocities = {32, 64, 96, 127, 32, 64, 96, 127};
     hats.rate = 16;
     makeSequenceTrack(track, hats, lengthInTicks, beatDuration);
@@ -188,8 +187,8 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
     desc.channel = kDrumChannel;
     desc.notes = {
         {42}, {}, {42}, {},
-        {42}, {}, {42}, {},
-        {42}, {}, {42}, {},
+        {42}, {46}, {42}, {},
+        {42}, {}, {42}, {46},
         {42}, {}, {42}, {},
     };
     desc.velocities = {80, 100, 120, 140};
