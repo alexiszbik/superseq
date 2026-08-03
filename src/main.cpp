@@ -168,7 +168,7 @@ int main()
 
         clock.setOnTick([&pool](int tick) {
             maybePrintBarPosition(pool.current());
-            pool.processTick(tick);
+            pool.processTick();
         });
 
         clock.setOnStop([&pool]() {

@@ -93,7 +93,7 @@ void Sequence::reset()
     }
 }
 
-void Sequence::processTick(int tick, bool wrapAtEnd)
+void Sequence::processTick(bool wrapAtEnd)
 {
     const int length = lengthInTicks();
     if (length <= 0) {

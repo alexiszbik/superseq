@@ -83,7 +83,7 @@ void SequencePool::requestPrevious(bool now)
     }
 }
 
-void SequencePool::processTick(int tick)
+void SequencePool::processTick()
 {
     if (sequences_.empty()) {
         return;
@@ -91,7 +91,7 @@ void SequencePool::processTick(int tick)
 
     Sequence& sequence = current();
     const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
-    sequence.processTick(tick, wrapAtEnd);
+    sequence.processTick(wrapAtEnd);
 
     if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
     {

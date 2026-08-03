@@ -23,7 +23,7 @@ public:
     void resetCurrent();
     void requestNext(bool now = false);
     void requestPrevious(bool now = false);
-    void processTick(int tick);
+    void processTick();
     void allNotesOff();
 
     static SequencePool createDefault(MidiInOut& midi);

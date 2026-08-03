@@ -43,7 +43,7 @@ public:
     void setTrackMuted(std::size_t index, bool muted);
 
     void reset();
-    void processTick(int tick, bool wrapAtEnd = true);
+    void processTick(bool wrapAtEnd = true);
     void allNotesOff();
 
     int barCount_;
