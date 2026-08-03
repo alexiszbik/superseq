@@ -1,12 +1,12 @@
 #include "SequenceTrackFactory.h"
 
+#include "MidiChannel.h"
+
 #include <cstdint>
 #include <vector>
 
 namespace
 {
-constexpr uint8_t kDrumChannel = 9; // MIDI channel 10
-
 struct SequenceDesc
 {
     uint8_t channel = 0;
@@ -76,7 +76,7 @@ SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int
     SequenceTrack track("Four On Floor");
 
     SequenceDesc desc;
-    desc.channel = kDrumChannel;
+    desc.channel = MidiChannel::kDrums;
     desc.notes = {{36}, {36}, {36}, {36}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
@@ -89,7 +89,7 @@ SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int b
     SequenceTrack track("Cmaj7 Arpeggio");
 
     SequenceDesc desc;
-    desc.channel = 0;
+    desc.channel = MidiChannel::kModularA;
     desc.notes = {{60}, {64}, {67}, {71}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
@@ -116,7 +116,7 @@ SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks, int beatD
     SequenceTrack track("Kick/Snare");
 
     SequenceDesc desc;
-    desc.channel = kDrumChannel;
+    desc.channel = MidiChannel::kDrums;
     desc.notes = {{36}, {36, 38}, {36}, {36, 38}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
@@ -129,14 +129,14 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks, i
     SequenceTrack track("Kick/Snare + Hats");
 
     SequenceDesc hats;
-    hats.channel = kDrumChannel;
+    hats.channel = MidiChannel::kDrums;
     hats.notes = {{42}};
     hats.velocities = {32, 64, 96, 127, 32, 64, 96, 127};
     hats.rate = 16;
     makeSequenceTrack(track, hats, lengthInTicks, beatDuration);
 
     SequenceDesc drums;
-    drums.channel = kDrumChannel;
+    drums.channel = MidiChannel::kDrums;
     drums.notes = {{36}, {36, 37}, {36}, {36, 37}};
     drums.rate = 4;
     makeSequenceTrack(track, drums, lengthInTicks, beatDuration);
@@ -151,7 +151,7 @@ SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks, int beatDu
     SequenceTrack track("Bassline");
 
     SequenceDesc desc;
-    desc.channel = 0;
+    desc.channel = MidiChannel::kModularA;
     desc.notes = {
         {36}, {36}, {36}, {36},
         {36}, {36}, {36}, {36},
@@ -184,7 +184,7 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks, int be
     SequenceTrack track("Hi-Hat");
 
     SequenceDesc desc;
-    desc.channel = kDrumChannel;
+    desc.channel = MidiChannel::kDrums;
     desc.notes = {
         {42}, {}, {42}, {},
         {42}, {46}, {42}, {},
@@ -203,7 +203,7 @@ SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks, int b
     SequenceTrack track("Snare Backbeat");
 
     SequenceDesc desc;
-    desc.channel = kDrumChannel;
+    desc.channel = MidiChannel::kDrums;
     desc.notes = {{}, {37}, {}, {37}};
     desc.velocities = {120};
     desc.rate = 4;
@@ -217,7 +217,7 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks, int beatD
     SequenceTrack track("Pad Chords");
 
     SequenceDesc desc;
-    desc.channel = 0;
+    desc.channel = MidiChannel::kModularA;
     desc.notes = {
         {}, {60, 64, 67}, {}, {},
         {}, {65, 69, 72}, {}, {},
@@ -237,7 +237,7 @@ SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks, int beat
     SequenceTrack track("Synth Stabs");
 
     SequenceDesc desc;
-    desc.channel = 0;
+    desc.channel = MidiChannel::kModularA;
     desc.notes = {{}, {72}, {}, {74}, {}, {76}, {}, {77}};
     desc.velocities = {105};
     desc.rate = 8;
@@ -251,7 +251,7 @@ SequenceTrack SequenceTrackFactory::createClapBackbeat(int lengthInTicks, int be
     SequenceTrack track("Clap");
 
     SequenceDesc desc;
-    desc.channel = kDrumChannel;
+    desc.channel = MidiChannel::kDrums;
     desc.notes = {{}, {39}, {}, {39}};
     desc.velocities = {115};
     desc.rate = 4;
