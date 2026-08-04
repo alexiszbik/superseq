@@ -18,17 +18,16 @@ public:
         const char* name,
         int barCount,
         int beatsPerBar = 4,
-        int barLoop = 0,
-        int beatDuration = kTicksPerQuarterNote
-        );
+        int barLoop = 0);
 
     const char* name() const noexcept { return name_; }
 
     int barCount() const noexcept { return barCount_; }
     int beatsPerBar() const noexcept { return beatsPerBar_; }
-    int beatDuration() const noexcept { return beatDuration_; }
     int loopInPoint() const noexcept { return loopInPoint_; }
-    int barLoop() const noexcept { return loopInPoint_ / (beatsPerBar_ * beatDuration_); }
+    int barLoop() const noexcept {
+        return loopInPoint_ / (beatsPerBar_ * kTicksPerQuarterNote);
+    }
 
     int lengthInTicks() const noexcept;
     int position() const noexcept { return position_; }
@@ -53,7 +52,6 @@ public:
 
     int barCount_;
     int beatsPerBar_;
-    int beatDuration_;
 
     int loopInPoint_ = 0;
     int position_ = 0;

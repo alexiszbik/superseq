@@ -1,11 +1,13 @@
 #include "TransportPosition.h"
 
+#include "Sequence.h"
+
 TransportPosition TransportPosition::fromTickIndex(
     int tickIndex,
     int beatsPerBar,
-    int beatDuration,
     int lengthInTicks)
 {
+    const int beatDuration = Sequence::kTicksPerQuarterNote;
     const int ticksPerBar = beatsPerBar * beatDuration;
     const int clampedTick = tickIndex >= lengthInTicks ? lengthInTicks - 1 : tickIndex;
 

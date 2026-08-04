@@ -10,11 +10,9 @@ Sequence::Sequence(
     const char* name,
     int barCount,
     int beatsPerBar,
-    int barLoop,
-    int beatDuration)
+    int barLoop)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
-    , beatDuration_(beatDuration)
 {
     StringHelper::copyName(name_, name);
 
@@ -26,26 +24,22 @@ Sequence::Sequence(
         throw std::invalid_argument("Sequence beats per bar must be positive");
     }
 
-    if (beatDuration_ <= 0) {
-        throw std::invalid_argument("Sequence beat duration must be positive");
-    }
-
     if (barLoop < 0 || barLoop >= barCount_) {
         throw std::invalid_argument("barLoop must be between 0 and barCount - 1");
     }
 
-    loopInPoint_ = barLoop * beatsPerBar_ * beatDuration_;
+    loopInPoint_ = barLoop * beatsPerBar_ * kTicksPerQuarterNote;
 }
 
 int Sequence::lengthInTicks() const noexcept
 {
-    return barCount_ * beatsPerBar_ * beatDuration_;
+    return barCount_ * beatsPerBar_ * kTicksPerQuarterNote;
 }
 
 TransportPosition Sequence::transportPosition(int tickIndex) const
 {
     return TransportPosition::fromTickIndex(
-        tickIndex, beatsPerBar_, beatDuration_, lengthInTicks());
+        tickIndex, beatsPerBar_, lengthInTicks());
 }
 
 std::string Sequence::formatPlayhead() const

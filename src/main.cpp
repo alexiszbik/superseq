@@ -131,14 +131,14 @@ void printPosition(const Sequence& sequence)
 
     std::cout << "Position: bar " << time.bar << " / " << sequence.barCount()
               << "  beat " << time.beat << " / " << sequence.beatsPerBar()
-              << "  tick " << time.tick << " / " << sequence.beatDuration()
+              << "  tick " << time.tick << " / " << Sequence::kTicksPerQuarterNote
               << "  (" << time.toString() << ")\n";
 }
 
 void maybePrintBarPosition(const Sequence& sequence)
 {
     const int tickIndex = sequence.position();
-    const int ticksPerBar = sequence.beatsPerBar() * sequence.beatDuration();
+    const int ticksPerBar = sequence.beatsPerBar() * Sequence::kTicksPerQuarterNote;
 
     if (tickIndex % ticksPerBar != 0)
         return;

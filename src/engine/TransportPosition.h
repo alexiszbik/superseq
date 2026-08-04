@@ -12,7 +12,6 @@ public:
     static TransportPosition fromTickIndex(
         int tickIndex,
         int beatsPerBar,
-        int beatDuration,
         int lengthInTicks);
 
     std::string toString() const;

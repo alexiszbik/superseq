@@ -4,7 +4,7 @@
 
 namespace
 {
-using TrackBuilder = SequenceTrack (*)(int lengthInTicks, int beatDuration);
+using TrackBuilder = SequenceTrack (*)(int lengthInTicks);
 
 Sequence buildSequence(
     int barCount,
@@ -14,12 +14,11 @@ Sequence buildSequence(
     TrackBuilder first,
     TrackBuilder second)
 {
-    Sequence sequence(name, barCount, beatsPerBar, barLoop, Sequence::kTicksPerQuarterNote);
+    Sequence sequence(name, barCount, beatsPerBar, barLoop);
     const int length = sequence.lengthInTicks();
-    const int beatDuration = sequence.beatDuration();
 
-    sequence.addTrack(first(length, beatDuration));
-    sequence.addTrack(second(length, beatDuration));
+    sequence.addTrack(first(length));
+    sequence.addTrack(second(length));
 
     return sequence;
 }
@@ -28,7 +27,7 @@ Sequence buildSequence(
 Sequence SequenceFactory::createSequenceOne(int barCount)
 {
     return buildSequence(
-        barCount, 4, 0, "Kick/Hats + Pads",
+        2, 7, 0, "Kick/Hats + Pads",
         SequenceTrackFactory::createKickSnareWithHats,
         SequenceTrackFactory::createCMaj7Arpeggio);
 }
