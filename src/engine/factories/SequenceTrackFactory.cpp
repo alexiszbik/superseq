@@ -7,6 +7,7 @@
 
 namespace
 {
+
 struct SequenceDesc
 {
     uint8_t channel = 0;
@@ -69,6 +70,47 @@ void makeSequenceTrack(
     }
 }
 
+
+void makeAutomationTrack(
+    SequenceTrack& track,
+    int startInTicks,
+    int endInTicks,
+    uint8_t controller,
+    uint8_t startValue,
+    uint8_t endValue,
+    uint8_t channel)
+{
+    if (startInTicks > endInTicks) {
+        return;
+    }
+
+    if (startInTicks == endInTicks) {
+        track.addControlChange(startInTicks, controller, endValue, channel);
+        return;
+    }
+
+    const int duration = endInTicks - startInTicks;
+    uint8_t lastSentValue = startValue;
+
+    track.addControlChange(startInTicks, controller, startValue, channel);
+
+    for (int tick = startInTicks + 1; tick < endInTicks; ++tick) {
+
+        const int delta = tick - startInTicks;
+        const int range = static_cast<int>(endValue) - startValue;
+
+        const uint8_t value = static_cast<uint8_t>(startValue + range * delta / duration);
+
+        if (value != lastSentValue) {
+            track.addControlChange(tick, controller, value, channel);
+            lastSentValue = value;
+        }
+    }
+
+    track.addControlChange(endInTicks, controller, endValue, channel);
+}
+
+
 } // namespace
 
 SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks, int beatDuration)
@@ -93,6 +135,48 @@ SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks, int b
     desc.notes = {{60}, {64}, {67}, {71}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks, beatDuration);
+/*
+    track.addControlChange(0, 10, 0, MidiChannel::kModularA);
+    track.addControlChange(96*4, 10, 127, MidiChannel::kModularA);
+    track.addControlChange(96*4*2, 10, 60, MidiChannel::kModularA);
+    track.addControlChange(96*4*3, 10, 127, MidiChannel::kModularA);
+*/
+    makeAutomationTrack(
+    track,
+    0,
+    96 * 4,   
+    10,
+    0,
+    127,
+    MidiChannel::kModularA);
+        makeAutomationTrack(
+    track,
+    96 * 4,             
+    96 * 8,
+    10,
+    0,
+    127,
+    MidiChannel::kModularA);
+
+        makeAutomationTrack(
+    track,
+    96 * 8,
+    96 * 12,    
+    10,
+    0,
+    127,
+    MidiChannel::kModularA);
+
+        makeAutomationTrack(
+    track,
+    96 * 12,
+    96 * 16,
+    10,
+    0,
+    127,
+    MidiChannel::kModularA);
+
+
 
     return track;
 }

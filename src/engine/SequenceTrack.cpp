@@ -30,9 +30,9 @@ void SequenceTrack::addNote(
 
 void SequenceTrack::addControlChange(
     int tick,
-    uint8_t channel,
     uint8_t controller,
-    uint8_t value)
+    uint8_t value,
+    uint8_t channel)
 {
     if (tick < 0) {
         throw std::invalid_argument("Invalid control change timing");
@@ -43,8 +43,8 @@ void SequenceTrack::addControlChange(
 
 void SequenceTrack::addProgramChange(
     int tick,
-    uint8_t channel,
-    uint8_t program)
+    uint8_t program,
+    uint8_t channel)
 {
     if (tick < 0) {
         throw std::invalid_argument("Invalid program change timing");

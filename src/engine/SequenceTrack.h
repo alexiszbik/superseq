@@ -33,14 +33,14 @@ public:
 
     void addControlChange(
         int tick,
-        uint8_t channel,
         uint8_t controller,
-        uint8_t value);
+        uint8_t value,
+        uint8_t channel);
 
     void addProgramChange(
         int tick,
-        uint8_t channel,
-        uint8_t program);
+        uint8_t program,
+        uint8_t channel);
 
     void reset();
     void processTick(int position, bool loopWrap);

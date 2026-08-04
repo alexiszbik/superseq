@@ -30,7 +30,7 @@ Sequence SequenceFactory::createSequenceOne(int barCount)
     return buildSequence(
         barCount, 4, 0, "Kick/Hats + Pads",
         SequenceTrackFactory::createKickSnareWithHats,
-        SequenceTrackFactory::createPadChords);
+        SequenceTrackFactory::createCMaj7Arpeggio);
 }
 
 Sequence SequenceFactory::createSequenceTwo(int barCount)
