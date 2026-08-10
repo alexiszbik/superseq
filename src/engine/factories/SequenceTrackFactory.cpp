@@ -11,7 +11,6 @@ namespace
 
 struct SequenceDesc
 {
-    uint8_t channel = 0;
     std::vector<std::vector<uint8_t>> notes;
     std::vector<uint8_t> velocities;
     std::vector<uint8_t> durations;
@@ -52,7 +51,7 @@ void makeSequenceTrack(
         bool noteExists = false;
 
         for (uint8_t note : stepNotes) {
-            track.addNote(tick, noteDuration, note, velocity, desc.channel);
+            track.addNote(tick, noteDuration, note, velocity);
             noteExists = true;
         }
 
@@ -70,55 +69,50 @@ void makeSequenceTrack(
     }
 }
 
-
 void makeAutomationTrack(
     SequenceTrack& track,
     int startInTicks,
     int endInTicks,
     uint8_t controller,
     uint8_t startValue,
-    uint8_t endValue,
-    uint8_t channel)
+    uint8_t endValue)
 {
     if (startInTicks > endInTicks) {
         return;
     }
 
     if (startInTicks == endInTicks) {
-        track.addControlChange(startInTicks, controller, endValue, channel);
+        track.addControlChange(startInTicks, controller, endValue);
         return;
     }
 
     const int duration = endInTicks - startInTicks;
     uint8_t lastSentValue = startValue;
 
-    track.addControlChange(startInTicks, controller, startValue, channel);
+    track.addControlChange(startInTicks, controller, startValue);
 
     for (int tick = startInTicks + 1; tick < endInTicks; ++tick) {
-
         const int delta = tick - startInTicks;
         const int range = static_cast<int>(endValue) - startValue;
 
         const uint8_t value = static_cast<uint8_t>(startValue + range * delta / duration);
 
         if (value != lastSentValue) {
-            track.addControlChange(tick, controller, value, channel);
+            track.addControlChange(tick, controller, value);
             lastSentValue = value;
         }
     }
 
-    track.addControlChange(endInTicks, controller, endValue, channel);
+    track.addControlChange(endInTicks, controller, endValue);
 }
-
 
 } // namespace
 
 SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks)
 {
-    SequenceTrack track("Four On Floor");
+    SequenceTrack track("Four On Floor", MidiChannel::kDrums);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kDrums;
     desc.notes = {{36}, {36}, {36}, {36}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks);
@@ -128,65 +122,26 @@ SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks)
 {
-    SequenceTrack track("Cmaj7 Arpeggio");
+    SequenceTrack track("Cmaj7 Arpeggio", MidiChannel::kModularA);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kModularA;
     desc.notes = {{60}, {64}, {67}, {71}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks);
-/*
-    track.addControlChange(0, 10, 0, MidiChannel::kModularA);
-    track.addControlChange(96*4, 10, 127, MidiChannel::kModularA);
-    track.addControlChange(96*4*2, 10, 60, MidiChannel::kModularA);
-    track.addControlChange(96*4*3, 10, 127, MidiChannel::kModularA);
-*/
-    makeAutomationTrack(
-    track,
-    0,
-    96 * 4,   
-    10,
-    0,
-    127,
-    MidiChannel::kModularA);
-        makeAutomationTrack(
-    track,
-    96 * 4,             
-    96 * 8,
-    10,
-    0,
-    127,
-    MidiChannel::kModularA);
 
-        makeAutomationTrack(
-    track,
-    96 * 8,
-    96 * 12,    
-    10,
-    0,
-    127,
-    MidiChannel::kModularA);
-
-        makeAutomationTrack(
-    track,
-    96 * 12,
-    96 * 16,
-    10,
-    0,
-    127,
-    MidiChannel::kModularA);
-
-
+    makeAutomationTrack(track, 0, 96 * 4, 10, 0, 127);
+    makeAutomationTrack(track, 96 * 4, 96 * 8, 10, 0, 127);
+    makeAutomationTrack(track, 96 * 8, 96 * 12, 10, 0, 127);
+    makeAutomationTrack(track, 96 * 12, 96 * 16, 10, 0, 127);
 
     return track;
 }
 
 SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks)
 {
-    SequenceTrack track("Am7 Arpeggio");
+    SequenceTrack track("Am7 Arpeggio", MidiChannel::kModularA);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kModularA;
     desc.notes = {{57}, {60}, {64}, {67}};
     desc.velocities = {95};
     desc.rate = 4;
@@ -197,10 +152,9 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks)
 {
-    SequenceTrack track("Kick/Snare");
+    SequenceTrack track("Kick/Snare", MidiChannel::kDrums);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kDrums;
     desc.notes = {{36}, {36, 38}, {36}, {36, 38}};
     desc.rate = 4;
     makeSequenceTrack(track, desc, lengthInTicks);
@@ -210,20 +164,18 @@ SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks)
 {
-    SequenceTrack track("Kick/Snare + Hats");
+    SequenceTrack track("Kick/Snare + Hats", MidiChannel::kDrums);
 
     SequenceDesc hats;
-    hats.channel = MidiChannel::kDrums;
     hats.notes = {{42}};
     hats.velocities = {32, 64, 96, 127, 32, 64, 96, 127};
     hats.rate = 16;
     makeSequenceTrack(track, hats, lengthInTicks);
 
     SequenceDesc drums;
-    drums.channel = MidiChannel::kDrums;
     drums.notes = {
         {36}, {}, {36, 37}, {}, {36}, {}, {36, 37}, {},
-        {36}, {}, {36,37}, {}, {36}, {37}};
+        {36}, {}, {36, 37}, {}, {36}, {37}};
     drums.rate = 8;
     makeSequenceTrack(track, drums, lengthInTicks);
 
@@ -234,10 +186,9 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks)
 {
-    SequenceTrack track("Bassline");
+    SequenceTrack track("Bassline", MidiChannel::kModularA);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kModularA;
     desc.notes = {
         {36}, {36}, {36}, {36},
         {36}, {36}, {36}, {36},
@@ -253,10 +204,9 @@ SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks)
 {
-    SequenceTrack track("Melodic Bass");
+    SequenceTrack track("Melodic Bass", 0);
 
     SequenceDesc desc;
-    desc.channel = 0;
     desc.notes = {{36}, {36}, {43}, {41}, {38}, {38}, {43}, {41}};
     desc.velocities = {110};
     desc.rate = 8;
@@ -267,24 +217,20 @@ SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks)
 {
-    SequenceTrack track("Hi-Hat");
+    SequenceTrack track("Hi-Hat", MidiChannel::kDrums);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kDrums;
-
     desc.notes = {
         {42}, {}, {42}, {},
         {42}, {46}, {42}, {},
         {42}, {}, {42}, {46},
         {42}, {}, {42}, {},
     };
-
     desc.velocities = {
-        100, 80, 
-        100, 80, 80, 
-        100, 80, 100, 
+        100, 80,
+        100, 80, 80,
+        100, 80, 100,
         100, 80};
-
     desc.rate = 16;
     makeSequenceTrack(track, desc, lengthInTicks);
 
@@ -293,10 +239,9 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks)
 {
-    SequenceTrack track("Snare Backbeat");
+    SequenceTrack track("Snare Backbeat", MidiChannel::kDrums);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kDrums;
     desc.notes = {{}, {37}, {}, {37}};
     desc.velocities = {120};
     desc.rate = 4;
@@ -307,10 +252,9 @@ SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks)
 {
-    SequenceTrack track("Pad Chords");
+    SequenceTrack track("Pad Chords", MidiChannel::kModularA);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kModularA;
     desc.notes = {
         {}, {60, 64, 67}, {}, {},
         {}, {65, 69, 72}, {}, {},
@@ -327,10 +271,9 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks)
 {
-    SequenceTrack track("Synth Stabs");
+    SequenceTrack track("Synth Stabs", MidiChannel::kModularA);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kModularA;
     desc.notes = {{}, {72}, {}, {74}, {}, {76}, {}, {77}};
     desc.velocities = {105};
     desc.rate = 8;
@@ -341,10 +284,9 @@ SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks)
 
 SequenceTrack SequenceTrackFactory::createClapBackbeat(int lengthInTicks)
 {
-    SequenceTrack track("Clap");
+    SequenceTrack track("Clap", MidiChannel::kDrums);
 
     SequenceDesc desc;
-    desc.channel = MidiChannel::kDrums;
     desc.notes = {{}, {39}, {}, {39}};
     desc.velocities = {115};
     desc.rate = 4;

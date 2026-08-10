@@ -4,7 +4,8 @@
 
 #include <stdexcept>
 
-SequenceTrack::SequenceTrack(const char* name)
+SequenceTrack::SequenceTrack(const char* name, uint8_t channel)
+    : channel_(channel)
 {
     StringHelper::copyName(name_, name);
 }
@@ -18,39 +19,36 @@ void SequenceTrack::addNote(
     int startTick,
     int durationTicks,
     uint8_t note,
-    uint8_t velocity,
-    uint8_t channel)
+    uint8_t velocity)
 {
     if (startTick < 0 || durationTicks <= 0) {
         throw std::invalid_argument("Invalid note timing");
     }
 
-    notes_.add({ startTick, durationTicks, channel, note, velocity });
+    notes_.add({ startTick, durationTicks, note, velocity });
 }
 
 void SequenceTrack::addControlChange(
     int tick,
     uint8_t controller,
-    uint8_t value,
-    uint8_t channel)
+    uint8_t value)
 {
     if (tick < 0) {
         throw std::invalid_argument("Invalid control change timing");
     }
 
-    controlChanges_.add({ tick, channel, controller, value });
+    controlChanges_.add({ tick, controller, value });
 }
 
 void SequenceTrack::addProgramChange(
     int tick,
-    uint8_t program,
-    uint8_t channel)
+    uint8_t program)
 {
     if (tick < 0) {
         throw std::invalid_argument("Invalid program change timing");
     }
 
-    programChanges_.add({ tick, channel, program });
+    programChanges_.add({ tick, program });
 }
 
 void SequenceTrack::reset()
@@ -80,8 +78,8 @@ void SequenceTrack::setMuted(bool muted)
 
 void SequenceTrack::startNote(const Note& note)
 {
-    midi_->sendNoteOn(note.channel, note.note, note.velocity);
-    activeNotes_.push_back({ note.channel, note.note, note.durationTicks });
+    midi_->sendNoteOn(channel_, note.note, note.velocity);
+    activeNotes_.push_back({ note.note, note.durationTicks });
 }
 
 void SequenceTrack::tickActiveNotes()
@@ -91,7 +89,7 @@ void SequenceTrack::tickActiveNotes()
         --it->remainingTicks;
 
         if (it->remainingTicks <= 0) {
-            midi_->sendNoteOff(it->channel, it->note, 0);
+            midi_->sendNoteOff(channel_, it->note, 0);
             it = activeNotes_.erase(it);
         } else {
             ++it;
@@ -102,7 +100,7 @@ void SequenceTrack::tickActiveNotes()
 void SequenceTrack::releaseActiveNotes()
 {
     for (const ActiveNote& activeNote : activeNotes_) {
-        midi_->sendNoteOff(activeNote.channel, activeNote.note, 0);
+        midi_->sendNoteOff(channel_, activeNote.note, 0);
     }
 
     activeNotes_.clear();
@@ -112,11 +110,11 @@ void SequenceTrack::processTick(int position, bool loopWrap)
 {
     if (!muted_) {
         programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {
-            midi_->sendProgramChange(change.channel, change.program);
+            midi_->sendProgramChange(channel_, change.program);
         });
 
         controlChanges_.process(position, loopWrap, [this](const ControlChange& change) {
-            midi_->sendControlChange(change.channel, change.controller, change.value);
+            midi_->sendControlChange(channel_, change.controller, change.value);
         });
 
         notes_.process(position, loopWrap, [this](const Note& note) {

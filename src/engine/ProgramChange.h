@@ -5,6 +5,5 @@
 struct ProgramChange
 {
     int tick = 0; //todo : turn it to uint16_t
-    uint8_t channel = 0; //todo : get rid of channel
     uint8_t program = 0;
 };
