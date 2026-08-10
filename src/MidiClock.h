@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.h"
 #include "MidiInOut.h"
 
 #include <functional>
@@ -18,7 +19,7 @@ public:
     using TickCallback = std::function<void(int tick)>;
     using TransportCallback = std::function<void()>;
 
-    explicit MidiClock(MidiInOut& midi);
+    MidiClock(MidiInOut& midi, Logger& logger);
     ~MidiClock();
 
     MidiClock(const MidiClock&) = delete;
@@ -42,6 +43,7 @@ private:
     std::chrono::nanoseconds tickInterval() const;
 
     MidiInOut& midi_;
+    Logger& logger_;
 
     mutable std::mutex mutex_;
     double bpm_ = 120.0;

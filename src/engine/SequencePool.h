@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.h"
 #include "MidiInOut.h"
 #include "Sequence.h"
 
@@ -9,7 +10,7 @@
 class SequencePool
 {
 public:
-    explicit SequencePool(MidiInOut& midi);
+    SequencePool(MidiInOut& midi, Logger& logger);
 
     void add(Sequence sequence);
 
@@ -26,7 +27,7 @@ public:
     void processTick();
     void allNotesOff();
 
-    static SequencePool createDefault(MidiInOut& midi);
+    static SequencePool createDefault(MidiInOut& midi, Logger& logger);
 
 private:
     enum class PendingSwitch
@@ -39,8 +40,10 @@ private:
     void advanceToNext();
     void advanceToPrevious();
     void queueSwitch(PendingSwitch direction);
+    void logCurrentSequenceSwitch();
 
     MidiInOut& midi_;
+    Logger& logger_;
     std::vector<Sequence> sequences_;
     std::size_t currentIndex_ = 0;
     PendingSwitch pendingSwitch_ = PendingSwitch::None;

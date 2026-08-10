@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Logger.h"
 #include "MidiInOut.h"
 
 #include <RtMidi.h>
@@ -11,7 +12,7 @@
 class VirtualMidiSender : public MidiInOut
 {
 public:
-    explicit VirtualMidiSender(const std::string& portName);
+    VirtualMidiSender(const std::string& portName, Logger& logger);
     ~VirtualMidiSender() override;
 
     VirtualMidiSender(const VirtualMidiSender&) = delete;
@@ -32,5 +33,6 @@ private:
     void sendMessage(const std::vector<uint8_t>& message);
 
     std::string portName_;
+    Logger& logger_;
     RtMidiOut midiOut_;
 };

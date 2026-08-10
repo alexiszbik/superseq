@@ -19,12 +19,13 @@ FetchContent_MakeAvailable(rtmidi)
 add_executable(ProtoSeq
     src/main.cpp
     src/MidiClock.cpp
+    src/TerminalLogger.cpp
+    src/TransportPosition.cpp
     src/VirtualMidiSender.cpp
     src/engine/StringHelper.cpp
     src/engine/Sequence.cpp
     src/engine/SequencePool.cpp
     src/engine/SequenceTrack.cpp
-    src/engine/TransportPosition.cpp
     src/engine/factories/SequenceFactory.cpp
     src/engine/factories/SequenceTrackFactory.cpp
 )

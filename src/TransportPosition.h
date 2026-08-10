@@ -7,6 +7,8 @@
 class TransportPosition
 {
 public:
+    static constexpr int kTicksPerQuarterNote = 96;
+
     int bar = 1;
     int beat = 1;
     int tick = 0;

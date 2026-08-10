@@ -2,11 +2,12 @@
 
 #include "factories/SequenceFactory.h"
 
-#include <iostream>
+#include <cstdio>
 #include <utility>
 
-SequencePool::SequencePool(MidiInOut& midi)
+SequencePool::SequencePool(MidiInOut& midi, Logger& logger)
     : midi_(midi)
+    , logger_(logger)
 {
 }
 
@@ -39,42 +40,38 @@ void SequencePool::queueSwitch(PendingSwitch direction)
     }
 
     if (pendingSwitch_ == PendingSwitch::Next && direction == PendingSwitch::Previous) {
-        std::cout << "Cancel next sequence.\n";
+        logger_.info("Cancel next sequence.\n");
         pendingSwitch_ = PendingSwitch::None;
         return;
     }
 
     if (pendingSwitch_ == PendingSwitch::Previous && direction == PendingSwitch::Next) {
-        std::cout << "Cancel previous sequence.\n";
+        logger_.info("Cancel previous sequence.\n");
         pendingSwitch_ = PendingSwitch::None;
         return;
     }
 
-    if (pendingSwitch_ != PendingSwitch::None)
-    {
-        std::cout << "Already waiting to switch sequence.\n";
+    if (pendingSwitch_ != PendingSwitch::None) {
+        logger_.info("Already waiting to switch sequence.\n");
         return;
     }
 
-    if (direction == PendingSwitch::Next && currentIndex_ + 1 >= sequences_.size())
-    {
-        std::cout << "Already on last sequence.\n";
+    if (direction == PendingSwitch::Next && currentIndex_ + 1 >= sequences_.size()) {
+        logger_.info("Already on last sequence.\n");
         return;
     }
 
-    if (direction == PendingSwitch::Previous && currentIndex_ == 0)
-    {
-        std::cout << "Already on first sequence.\n";
+    if (direction == PendingSwitch::Previous && currentIndex_ == 0) {
+        logger_.info("Already on first sequence.\n");
         return;
     }
 
     pendingSwitch_ = direction;
 
     if (direction == PendingSwitch::Next) {
-        std::cout << "Next sequence queued — finishing current sequence...\n";
-    }
-    else {
-        std::cout << "Previous sequence queued — finishing current sequence...\n";
+        logger_.info("Next sequence queued — finishing current sequence...\n");
+    } else {
+        logger_.info("Previous sequence queued — finishing current sequence...\n");
     }
 }
 
@@ -106,14 +103,11 @@ void SequencePool::processTick()
     const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
     sequence.processTick(wrapAtEnd);
 
-    //If ready to process the next sequence
-    if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
-    {
+    if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks()) {
         if (pendingSwitch_ == PendingSwitch::Next) {
             advanceToNext();
-        }
-        else {
-            advanceToPrevious(); 
+        } else {
+            advanceToPrevious();
         }
     }
 }
@@ -125,47 +119,57 @@ void SequencePool::allNotesOff()
     }
 }
 
+void SequencePool::logCurrentSequenceSwitch()
+{
+    char buffer[128];
+    std::snprintf(
+        buffer,
+        sizeof(buffer),
+        "Switched to sequence %zu / %zu — %s (%zu tracks)\n",
+        currentIndex_ + 1,
+        sequences_.size(),
+        current().name(),
+        current().trackCount());
+    logger_.info(buffer);
+}
+
 void SequencePool::advanceToNext()
 {
     if (currentIndex_ == (size() - 1)) {
-        std::cout << "Already on last sequence.\n";
+        logger_.info("Already on last sequence.\n");
         return;
     }
 
-    current().allNotesOff(); //really ?
+    current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
     ++currentIndex_;
 
     current().reset();
 
-    std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
-              << " — " << current().name()
-              << " (" << current().trackCount() << " tracks)\n";
+    logCurrentSequenceSwitch();
 }
 
 void SequencePool::advanceToPrevious()
 {
     if (currentIndex_ == 0) {
-        std::cout << "Already on first sequence.\n";
+        logger_.info("Already on first sequence.\n");
         return;
     }
 
-    current().allNotesOff(); //really ?
+    current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
     --currentIndex_;
 
     current().reset();
 
-    std::cout << "Switched to sequence " << currentIndex_ + 1 << " / " << sequences_.size()
-              << " — " << current().name()
-              << " (" << current().trackCount() << " tracks)\n";
+    logCurrentSequenceSwitch();
 }
 
-SequencePool SequencePool::createDefault(MidiInOut& midi)
+SequencePool SequencePool::createDefault(MidiInOut& midi, Logger& logger)
 {
-    SequencePool pool(midi);
+    SequencePool pool(midi, logger);
 
     pool.add(SequenceFactory::createSequenceOne(4));
     pool.add(SequenceFactory::createSequenceTwo(4));

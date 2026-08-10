@@ -3,30 +3,17 @@
 #include "StringHelper.h"
 
 #include <stdexcept>
-#include <string>
 #include <utility>
 
 Sequence::Sequence(
     const char* name,
-    int barCount,
-    int beatsPerBar,
-    int barLoop)
+    uint8_t barCount,
+    uint8_t beatsPerBar,
+    uint8_t barLoop)
     : barCount_(barCount)
     , beatsPerBar_(beatsPerBar)
 {
     StringHelper::copyName(name_, name);
-
-    if (barCount_ <= 0) {
-        throw std::invalid_argument("Sequence bar count must be positive");
-    }
-
-    if (beatsPerBar_ <= 0) {
-        throw std::invalid_argument("Sequence beats per bar must be positive");
-    }
-
-    if (barLoop < 0 || barLoop >= barCount_) {
-        throw std::invalid_argument("barLoop must be between 0 and barCount - 1");
-    }
 
     const uint32_t length = static_cast<uint32_t>(barCount_) * beatsPerBar_ * kTicksPerQuarterNote;
     if (!fitsInTickRange(length)) {
@@ -40,18 +27,6 @@ Sequence::Sequence(
 tick_t Sequence::lengthInTicks() const noexcept
 {
     return static_cast<tick_t>(barCount_ * beatsPerBar_ * kTicksPerQuarterNote);
-}
-
-TransportPosition Sequence::transportPosition(tick_t tickIndex) const
-{
-    return TransportPosition::fromTickIndex(
-        tickIndex, beatsPerBar_, lengthInTicks());
-}
-
-std::string Sequence::formatPlayhead() const
-{
-    const tick_t tickIndex = position_ == 0 ? 0 : position_ - 1;
-    return transportPosition(tickIndex).toString();
 }
 
 void Sequence::attachMidi(MidiInOut& midi)

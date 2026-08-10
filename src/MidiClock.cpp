@@ -1,7 +1,7 @@
 #include "MidiClock.h"
 
-#include <iostream>
 #include <stdexcept>
+#include <string>
 
 namespace
 {
@@ -9,8 +9,9 @@ constexpr double kMinBpm = 20.0;
 constexpr double kMaxBpm = 300.0;
 } // namespace
 
-MidiClock::MidiClock(MidiInOut& midi)
+MidiClock::MidiClock(MidiInOut& midi, Logger& logger)
     : midi_(midi)
+    , logger_(logger)
 {
     thread_ = std::thread(&MidiClock::run, this);
 }
@@ -85,7 +86,8 @@ void MidiClock::play()
     }
     cv_.notify_one();
 
-    std::cout << "MIDI clock started at " << bpm() << " BPM\n";
+    logger_.info(
+        "MIDI clock started at " + std::to_string(static_cast<int>(bpm())) + " BPM\n");
 }
 
 void MidiClock::stop()
@@ -107,7 +109,7 @@ void MidiClock::stop()
 
     cv_.notify_one();
 
-    std::cout << "MIDI clock stopped\n";
+    logger_.info("MIDI clock stopped\n");
 }
 
 std::chrono::nanoseconds MidiClock::tickInterval() const

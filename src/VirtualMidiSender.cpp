@@ -1,10 +1,11 @@
 #include "VirtualMidiSender.h"
 
-#include <iostream>
 #include <stdexcept>
+#include <string>
 
-VirtualMidiSender::VirtualMidiSender(const std::string& portName)
+VirtualMidiSender::VirtualMidiSender(const std::string& portName, Logger& logger)
     : portName_(portName)
+    , logger_(logger)
 {
     try
     {
@@ -16,8 +17,8 @@ VirtualMidiSender::VirtualMidiSender(const std::string& portName)
             "Failed to create virtual MIDI port \"" + portName_ + "\": " + error.getMessage());
     }
 
-    std::cout << "Virtual MIDI port created: \"" << portName_ << "\"\n";
-    std::cout << "Connect a MIDI monitor or DAW to this port to verify output.\n";
+    logger_.info("Virtual MIDI port created: \"" + portName_ + "\"\n");
+    logger_.info("Connect a MIDI monitor or DAW to this port to verify output.\n");
 }
 
 VirtualMidiSender::~VirtualMidiSender()

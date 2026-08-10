@@ -4,10 +4,8 @@
 #include "SequenceTrack.h"
 #include "StringHelper.h"
 #include "Tick.h"
-#include "TransportPosition.h"
 
 #include <cstddef>
-#include <string>
 #include <vector>
 
 class Sequence
@@ -17,9 +15,9 @@ public:
 
     Sequence(
         const char* name,
-        int barCount,
-        int beatsPerBar = 4,
-        int barLoop = 0);
+        uint8_t barCount,
+        uint8_t beatsPerBar = 4,
+        uint8_t barLoop = 0);
 
     const char* name() const noexcept { return name_; }
 
@@ -32,9 +30,6 @@ public:
 
     tick_t lengthInTicks() const noexcept;
     tick_t position() const noexcept { return position_; }
-
-    TransportPosition transportPosition(tick_t tickIndex) const;
-    std::string formatPlayhead() const;
 
     void attachMidi(MidiInOut& midi);
 
@@ -51,8 +46,8 @@ public:
     void processTick(bool wrapAtEnd = true);
     void allNotesOff();
 
-    int barCount_;
-    int beatsPerBar_;
+    uint8_t barCount_;
+    uint8_t beatsPerBar_;
 
     tick_t loopInPoint_ = 0;
     tick_t position_ = 0;
