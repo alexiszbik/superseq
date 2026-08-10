@@ -34,8 +34,21 @@ void SequencePool::resetCurrent()
 
 void SequencePool::queueSwitch(PendingSwitch direction)
 {
-    if (sequences_.empty())
+    if (sequences_.empty()) {
         return;
+    }
+
+    if (pendingSwitch_ == PendingSwitch::Next && direction == PendingSwitch::Previous) {
+        std::cout << "Cancel next sequence.\n";
+        pendingSwitch_ = PendingSwitch::None;
+        return;
+    }
+
+    if (pendingSwitch_ == PendingSwitch::Previous && direction == PendingSwitch::Next) {
+        std::cout << "Cancel previous sequence.\n";
+        pendingSwitch_ = PendingSwitch::None;
+        return;
+    }
 
     if (pendingSwitch_ != PendingSwitch::None)
     {
@@ -93,6 +106,7 @@ void SequencePool::processTick()
     const bool wrapAtEnd = pendingSwitch_ == PendingSwitch::None;
     sequence.processTick(wrapAtEnd);
 
+    //If ready to process the next sequence
     if (pendingSwitch_ != PendingSwitch::None && sequence.position() >= sequence.lengthInTicks())
     {
         if (pendingSwitch_ == PendingSwitch::Next) {
@@ -118,7 +132,7 @@ void SequencePool::advanceToNext()
         return;
     }
 
-    current().allNotesOff();
+    current().allNotesOff(); //really ?
 
     pendingSwitch_ = PendingSwitch::None;
     ++currentIndex_;
@@ -137,7 +151,7 @@ void SequencePool::advanceToPrevious()
         return;
     }
 
-    current().allNotesOff();
+    current().allNotesOff(); //really ?
 
     pendingSwitch_ = PendingSwitch::None;
     --currentIndex_;
