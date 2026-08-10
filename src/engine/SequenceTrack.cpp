@@ -16,38 +16,34 @@ void SequenceTrack::attachMidi(MidiInOut& midi)
 }
 
 void SequenceTrack::addNote(
-    int startTick,
-    int durationTicks,
+    tick_t startTick,
+    tick_t durationTicks,
     uint8_t note,
     uint8_t velocity)
 {
-    if (startTick < 0 || durationTicks <= 0) {
+    if (durationTicks == 0) {
         throw std::invalid_argument("Invalid note timing");
+    }
+
+    if (!fitsInTickRange(static_cast<uint32_t>(startTick) + durationTicks)) {
+        throw std::invalid_argument("Note exceeds maximum tick range");
     }
 
     notes_.add({ startTick, durationTicks, note, velocity });
 }
 
 void SequenceTrack::addControlChange(
-    int tick,
+    tick_t tick,
     uint8_t controller,
     uint8_t value)
 {
-    if (tick < 0) {
-        throw std::invalid_argument("Invalid control change timing");
-    }
-
     controlChanges_.add({ tick, controller, value });
 }
 
 void SequenceTrack::addProgramChange(
-    int tick,
+    tick_t tick,
     uint8_t program)
 {
-    if (tick < 0) {
-        throw std::invalid_argument("Invalid program change timing");
-    }
-
     programChanges_.add({ tick, program });
 }
 
@@ -88,7 +84,7 @@ void SequenceTrack::tickActiveNotes()
     {
         --it->remainingTicks;
 
-        if (it->remainingTicks <= 0) {
+        if (it->remainingTicks == 0) {
             midi_->sendNoteOff(channel_, it->note, 0);
             it = activeNotes_.erase(it);
         } else {
@@ -106,7 +102,7 @@ void SequenceTrack::releaseActiveNotes()
     activeNotes_.clear();
 }
 
-void SequenceTrack::processTick(int position, bool loopWrap)
+void SequenceTrack::processTick(tick_t position, bool loopWrap)
 {
     if (!muted_) {
         programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {

@@ -6,6 +6,7 @@
 #include "Note.h"
 #include "ProgramChange.h"
 #include "TimedEventList.h"
+#include "Tick.h"
 
 #include <cstdint>
 #include <vector>
@@ -26,29 +27,29 @@ public:
     void setStartMuted() { startMuted_ = true; }
 
     void addNote(
-        int startTick,
-        int durationTicks,
+        tick_t startTick,
+        tick_t durationTicks,
         uint8_t note,
         uint8_t velocity);
 
     void addControlChange(
-        int tick,
+        tick_t tick,
         uint8_t controller,
         uint8_t value);
 
     void addProgramChange(
-        int tick,
+        tick_t tick,
         uint8_t program);
 
     void reset();
-    void processTick(int position, bool loopWrap);
+    void processTick(tick_t position, bool loopWrap);
     void releaseActiveNotes();
 
 private:
     struct ActiveNote
     {
         uint8_t note = 0;
-        int remainingTicks = 0;
+        tick_t remainingTicks = 0;
     };
 
     void startNote(const Note& note);

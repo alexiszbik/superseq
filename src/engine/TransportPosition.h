@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Tick.h"
+
 #include <string>
 
 class TransportPosition
@@ -10,9 +12,9 @@ public:
     int tick = 0;
 
     static TransportPosition fromTickIndex(
-        int tickIndex,
+        tick_t tickIndex,
         int beatsPerBar,
-        int lengthInTicks);
+        tick_t lengthInTicks);
 
     std::string toString() const;
 };

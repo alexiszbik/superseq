@@ -2,6 +2,7 @@
 
 #include "MidiChannel.h"
 #include "Sequence.h"
+#include "Tick.h"
 
 #include <cstdint>
 #include <vector>
@@ -20,7 +21,7 @@ struct SequenceDesc
 void makeSequenceTrack(
     SequenceTrack& track,
     const SequenceDesc& desc,
-    int lengthInTicks)
+    tick_t lengthInTicks)
 {
     const int barDuration = Sequence::kTicksPerQuarterNote * 4;
     const int stepDuration = barDuration / desc.rate;
@@ -34,7 +35,7 @@ void makeSequenceTrack(
     const int durationSize = static_cast<int>(desc.durations.size());
     int durIdx = 0;
 
-    for (int tick = 0; tick < lengthInTicks; tick += stepDuration)
+    for (tick_t tick = 0; tick < lengthInTicks; tick = static_cast<tick_t>(tick + stepDuration))
     {
         int noteDuration = stepDuration;
         const std::vector<uint8_t>& stepNotes = desc.notes[seqIdx];
@@ -71,8 +72,8 @@ void makeSequenceTrack(
 
 void makeAutomationTrack(
     SequenceTrack& track,
-    int startInTicks,
-    int endInTicks,
+    tick_t startInTicks,
+    tick_t endInTicks,
     uint8_t controller,
     uint8_t startValue,
     uint8_t endValue)
@@ -86,16 +87,17 @@ void makeAutomationTrack(
         return;
     }
 
-    const int duration = endInTicks - startInTicks;
+    const tick_t duration = endInTicks - startInTicks;
     uint8_t lastSentValue = startValue;
 
     track.addControlChange(startInTicks, controller, startValue);
 
-    for (int tick = startInTicks + 1; tick < endInTicks; ++tick) {
-        const int delta = tick - startInTicks;
+    for (tick_t tick = startInTicks + 1; tick < endInTicks; ++tick) {
+        const tick_t delta = tick - startInTicks;
         const int range = static_cast<int>(endValue) - startValue;
 
-        const uint8_t value = static_cast<uint8_t>(startValue + range * delta / duration);
+        const uint8_t value = static_cast<uint8_t>(
+            startValue + range * static_cast<int>(delta) / static_cast<int>(duration));
 
         if (value != lastSentValue) {
             track.addControlChange(tick, controller, value);
@@ -108,7 +110,7 @@ void makeAutomationTrack(
 
 } // namespace
 
-SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createFourOnFloorKick(tick_t lengthInTicks)
 {
     SequenceTrack track("Four On Floor", MidiChannel::kDrums);
 
@@ -120,7 +122,7 @@ SequenceTrack SequenceTrackFactory::createFourOnFloorKick(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(tick_t lengthInTicks)
 {
     SequenceTrack track("Cmaj7 Arpeggio", MidiChannel::kModularA);
 
@@ -137,7 +139,7 @@ SequenceTrack SequenceTrackFactory::createCMaj7Arpeggio(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createAm7Arpeggio(tick_t lengthInTicks)
 {
     SequenceTrack track("Am7 Arpeggio", MidiChannel::kModularA);
 
@@ -150,7 +152,7 @@ SequenceTrack SequenceTrackFactory::createAm7Arpeggio(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createKickSnare(tick_t lengthInTicks)
 {
     SequenceTrack track("Kick/Snare", MidiChannel::kDrums);
 
@@ -162,7 +164,7 @@ SequenceTrack SequenceTrackFactory::createKickSnare(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createKickSnareWithHats(tick_t lengthInTicks)
 {
     SequenceTrack track("Kick/Snare + Hats", MidiChannel::kDrums);
 
@@ -184,7 +186,7 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createBassLine(tick_t lengthInTicks)
 {
     SequenceTrack track("Bassline", MidiChannel::kModularA);
 
@@ -202,7 +204,7 @@ SequenceTrack SequenceTrackFactory::createBassLine(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createMelodicBass(tick_t lengthInTicks)
 {
     SequenceTrack track("Melodic Bass", 0);
 
@@ -215,7 +217,7 @@ SequenceTrack SequenceTrackFactory::createMelodicBass(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createHiHatPattern(tick_t lengthInTicks)
 {
     SequenceTrack track("Hi-Hat", MidiChannel::kDrums);
 
@@ -237,7 +239,7 @@ SequenceTrack SequenceTrackFactory::createHiHatPattern(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createSnareBackbeat(tick_t lengthInTicks)
 {
     SequenceTrack track("Snare Backbeat", MidiChannel::kDrums);
 
@@ -250,7 +252,7 @@ SequenceTrack SequenceTrackFactory::createSnareBackbeat(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createPadChords(tick_t lengthInTicks)
 {
     SequenceTrack track("Pad Chords", MidiChannel::kModularA);
 
@@ -269,7 +271,7 @@ SequenceTrack SequenceTrackFactory::createPadChords(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createSynthStabs(tick_t lengthInTicks)
 {
     SequenceTrack track("Synth Stabs", MidiChannel::kModularA);
 
@@ -282,7 +284,7 @@ SequenceTrack SequenceTrackFactory::createSynthStabs(int lengthInTicks)
     return track;
 }
 
-SequenceTrack SequenceTrackFactory::createClapBackbeat(int lengthInTicks)
+SequenceTrack SequenceTrackFactory::createClapBackbeat(tick_t lengthInTicks)
 {
     SequenceTrack track("Clap", MidiChannel::kDrums);
 

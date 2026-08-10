@@ -4,7 +4,7 @@
 
 namespace
 {
-using TrackBuilder = SequenceTrack (*)(int lengthInTicks);
+using TrackBuilder = SequenceTrack (*)(tick_t lengthInTicks);
 
 Sequence buildSequence(
     int barCount,
@@ -15,7 +15,7 @@ Sequence buildSequence(
     TrackBuilder second)
 {
     Sequence sequence(name, barCount, beatsPerBar, barLoop);
-    const int length = sequence.lengthInTicks();
+    const tick_t length = sequence.lengthInTicks();
 
     sequence.addTrack(first(length));
     sequence.addTrack(second(length));

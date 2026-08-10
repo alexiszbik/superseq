@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Tick.h"
+
 #include <cstdint>
 
 struct ProgramChange
 {
-    int tick = 0; //todo : turn it to uint16_t
+    tick_t tick = 0;
     uint8_t program = 0;
 };

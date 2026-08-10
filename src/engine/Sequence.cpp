@@ -28,15 +28,21 @@ Sequence::Sequence(
         throw std::invalid_argument("barLoop must be between 0 and barCount - 1");
     }
 
-    loopInPoint_ = barLoop * beatsPerBar_ * kTicksPerQuarterNote;
+    const uint32_t length = static_cast<uint32_t>(barCount_) * beatsPerBar_ * kTicksPerQuarterNote;
+    if (!fitsInTickRange(length)) {
+        throw std::invalid_argument("Sequence length exceeds maximum tick range");
+    }
+
+    const uint32_t loopInPoint = static_cast<uint32_t>(barLoop) * beatsPerBar_ * kTicksPerQuarterNote;
+    loopInPoint_ = static_cast<tick_t>(loopInPoint);
 }
 
-int Sequence::lengthInTicks() const noexcept
+tick_t Sequence::lengthInTicks() const noexcept
 {
-    return barCount_ * beatsPerBar_ * kTicksPerQuarterNote;
+    return static_cast<tick_t>(barCount_ * beatsPerBar_ * kTicksPerQuarterNote);
 }
 
-TransportPosition Sequence::transportPosition(int tickIndex) const
+TransportPosition Sequence::transportPosition(tick_t tickIndex) const
 {
     return TransportPosition::fromTickIndex(
         tickIndex, beatsPerBar_, lengthInTicks());
@@ -44,7 +50,7 @@ TransportPosition Sequence::transportPosition(int tickIndex) const
 
 std::string Sequence::formatPlayhead() const
 {
-    const int tickIndex = position_ == 0 ? 0 : position_ - 1;
+    const tick_t tickIndex = position_ == 0 ? 0 : position_ - 1;
     return transportPosition(tickIndex).toString();
 }
 
@@ -98,8 +104,8 @@ void Sequence::reset()
 
 void Sequence::processTick(bool wrapAtEnd)
 {
-    const int length = lengthInTicks();
-    if (length <= 0) {
+    const tick_t length = lengthInTicks();
+    if (length == 0) {
         return;
     }
 

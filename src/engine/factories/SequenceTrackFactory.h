@@ -5,16 +5,16 @@
 class SequenceTrackFactory
 {
 public:
-    static SequenceTrack createCMaj7Arpeggio(int lengthInTicks);
-    static SequenceTrack createAm7Arpeggio(int lengthInTicks);
-    static SequenceTrack createKickSnare(int lengthInTicks);
-    static SequenceTrack createKickSnareWithHats(int lengthInTicks);
-    static SequenceTrack createBassLine(int lengthInTicks);
-    static SequenceTrack createMelodicBass(int lengthInTicks);
-    static SequenceTrack createHiHatPattern(int lengthInTicks);
-    static SequenceTrack createFourOnFloorKick(int lengthInTicks);
-    static SequenceTrack createSnareBackbeat(int lengthInTicks);
-    static SequenceTrack createPadChords(int lengthInTicks);
-    static SequenceTrack createSynthStabs(int lengthInTicks);
-    static SequenceTrack createClapBackbeat(int lengthInTicks);
+    static SequenceTrack createCMaj7Arpeggio(tick_t lengthInTicks);
+    static SequenceTrack createAm7Arpeggio(tick_t lengthInTicks);
+    static SequenceTrack createKickSnare(tick_t lengthInTicks);
+    static SequenceTrack createKickSnareWithHats(tick_t lengthInTicks);
+    static SequenceTrack createBassLine(tick_t lengthInTicks);
+    static SequenceTrack createMelodicBass(tick_t lengthInTicks);
+    static SequenceTrack createHiHatPattern(tick_t lengthInTicks);
+    static SequenceTrack createFourOnFloorKick(tick_t lengthInTicks);
+    static SequenceTrack createSnareBackbeat(tick_t lengthInTicks);
+    static SequenceTrack createPadChords(tick_t lengthInTicks);
+    static SequenceTrack createSynthStabs(tick_t lengthInTicks);
+    static SequenceTrack createClapBackbeat(tick_t lengthInTicks);
 };

@@ -3,6 +3,7 @@
 #include "MidiInOut.h"
 #include "SequenceTrack.h"
 #include "StringHelper.h"
+#include "Tick.h"
 #include "TransportPosition.h"
 
 #include <cstddef>
@@ -24,15 +25,15 @@ public:
 
     int barCount() const noexcept { return barCount_; }
     int beatsPerBar() const noexcept { return beatsPerBar_; }
-    int loopInPoint() const noexcept { return loopInPoint_; }
+    tick_t loopInPoint() const noexcept { return loopInPoint_; }
     int barLoop() const noexcept {
         return loopInPoint_ / (beatsPerBar_ * kTicksPerQuarterNote);
     }
 
-    int lengthInTicks() const noexcept;
-    int position() const noexcept { return position_; }
+    tick_t lengthInTicks() const noexcept;
+    tick_t position() const noexcept { return position_; }
 
-    TransportPosition transportPosition(int tickIndex) const;
+    TransportPosition transportPosition(tick_t tickIndex) const;
     std::string formatPlayhead() const;
 
     void attachMidi(MidiInOut& midi);
@@ -53,8 +54,8 @@ public:
     int barCount_;
     int beatsPerBar_;
 
-    int loopInPoint_ = 0;
-    int position_ = 0;
+    tick_t loopInPoint_ = 0;
+    tick_t position_ = 0;
     bool loopStartAfterWrap_ = false;
     std::vector<SequenceTrack> tracks_;
 

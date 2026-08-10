@@ -3,13 +3,13 @@
 #include "Sequence.h"
 
 TransportPosition TransportPosition::fromTickIndex(
-    int tickIndex,
+    tick_t tickIndex,
     int beatsPerBar,
-    int lengthInTicks)
+    tick_t lengthInTicks)
 {
     const int beatDuration = Sequence::kTicksPerQuarterNote;
     const int ticksPerBar = beatsPerBar * beatDuration;
-    const int clampedTick = tickIndex >= lengthInTicks ? lengthInTicks - 1 : tickIndex;
+    const tick_t clampedTick = tickIndex >= lengthInTicks ? lengthInTicks - 1 : tickIndex;
 
     TransportPosition position;
     position.bar = clampedTick / ticksPerBar + 1;

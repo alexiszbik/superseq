@@ -21,7 +21,7 @@ public:
     }
 
     template<typename Handler>
-    void process(int position, bool loopWrap, Handler&& onEvent)
+    void process(tick_t position, bool loopWrap, Handler&& onEvent)
     {
         if (loopWrap) {
             nextIndex_ = 0;

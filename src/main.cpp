@@ -126,7 +126,7 @@ bool tryMuteTrack(SequencePool& pool, const std::string& argument)
 
 void printPosition(const Sequence& sequence)
 {
-    const int tickIndex = sequence.position() == 0 ? 0 : sequence.position() - 1;
+    const tick_t tickIndex = sequence.position() == 0 ? 0 : sequence.position() - 1;
     const TransportPosition time = sequence.transportPosition(tickIndex);
 
     std::cout << "Position: bar " << time.bar << " / " << sequence.barCount()
@@ -137,7 +137,7 @@ void printPosition(const Sequence& sequence)
 
 void maybePrintBarPosition(const Sequence& sequence)
 {
-    const int tickIndex = sequence.position();
+    const tick_t tickIndex = sequence.position();
     const int ticksPerBar = sequence.beatsPerBar() * Sequence::kTicksPerQuarterNote;
 
     if (tickIndex % ticksPerBar != 0)
