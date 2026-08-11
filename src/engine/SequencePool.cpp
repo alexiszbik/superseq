@@ -11,20 +11,39 @@ SequencePool::SequencePool(MidiInOut& midi, Logger& logger)
 {
 }
 
-void SequencePool::add(Sequence sequence)
+void SequencePool::add(Song song)
 {
-    sequence.attachMidi(midi_);
-    sequences_.push_back(std::move(sequence));
+    song.attachMidi(midi_);
+    songs_.push_back(std::move(song));
+}
+
+std::size_t SequencePool::sequenceCount() const noexcept
+{
+    std::size_t count = 0;
+    for (const Song& song : songs_) {
+        count += song.size();
+    }
+    return count;
+}
+
+Song& SequencePool::currentSong()
+{
+    return songs_.at(currentSongIndex_);
+}
+
+const Song& SequencePool::currentSong() const
+{
+    return songs_.at(currentSongIndex_);
 }
 
 Sequence& SequencePool::current()
 {
-    return sequences_.at(currentIndex_);
+    return currentSong().sequence(currentSequenceIndex_);
 }
 
 const Sequence& SequencePool::current() const
 {
-    return sequences_.at(currentIndex_);
+    return currentSong().sequence(currentSequenceIndex_);
 }
 
 void SequencePool::resetCurrent()
@@ -33,9 +52,37 @@ void SequencePool::resetCurrent()
     current().reset();
 }
 
+bool SequencePool::canAdvanceNext() const
+{
+    if (songs_.empty()) {
+        return false;
+    }
+
+    if (currentSequenceIndex_ + 1 < currentSong().size()) {
+        return true;
+    }
+
+    return currentSongIndex_ + 1 < songs_.size()
+        && songs_[currentSongIndex_ + 1].size() > 0;
+}
+
+bool SequencePool::canAdvancePrevious() const
+{
+    if (songs_.empty()) {
+        return false;
+    }
+
+    if (currentSequenceIndex_ > 0) {
+        return true;
+    }
+
+    return currentSongIndex_ > 0
+        && songs_[currentSongIndex_ - 1].size() > 0;
+}
+
 void SequencePool::queueSwitch(PendingSwitch direction)
 {
-    if (sequences_.empty()) {
+    if (songs_.empty()) {
         return;
     }
 
@@ -56,12 +103,12 @@ void SequencePool::queueSwitch(PendingSwitch direction)
         return;
     }
 
-    if (direction == PendingSwitch::Next && currentIndex_ + 1 >= sequences_.size()) {
+    if (direction == PendingSwitch::Next && !canAdvanceNext()) {
         logger_.info("Already on last sequence.\n");
         return;
     }
 
-    if (direction == PendingSwitch::Previous && currentIndex_ == 0) {
+    if (direction == PendingSwitch::Previous && !canAdvancePrevious()) {
         logger_.info("Already on first sequence.\n");
         return;
     }
@@ -95,7 +142,7 @@ void SequencePool::requestPrevious(bool now)
 
 void SequencePool::processTick()
 {
-    if (sequences_.empty()) {
+    if (songs_.empty()) {
         return;
     }
 
@@ -114,21 +161,22 @@ void SequencePool::processTick()
 
 void SequencePool::allNotesOff()
 {
-    for (Sequence& sequence : sequences_) {
-        sequence.allNotesOff();
+    for (Song& song : songs_) {
+        song.allNotesOff();
     }
 }
 
 void SequencePool::logCurrentSequenceSwitch()
 {
-    //Todo : maybe something to do here to not use alocal char buffer
-    char buffer[128];
+    char buffer[192];
     std::snprintf(
         buffer,
         sizeof(buffer),
-        "Switched to sequence %zu / %zu — %s (%zu tracks)\n",
-        currentIndex_ + 1,
-        sequences_.size(),
+        "Switched to song %zu / %zu — sequence %zu / %zu — %s (%zu tracks)\n",
+        currentSongIndex_ + 1,
+        songs_.size(),
+        currentSequenceIndex_ + 1,
+        currentSong().size(),
         current().name(),
         current().trackCount());
     logger_.info(buffer);
@@ -136,7 +184,7 @@ void SequencePool::logCurrentSequenceSwitch()
 
 void SequencePool::advanceToNext()
 {
-    if (currentIndex_ == (size() - 1)) {
+    if (!canAdvanceNext()) {
         logger_.info("Already on last sequence.\n");
         return;
     }
@@ -144,7 +192,13 @@ void SequencePool::advanceToNext()
     current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
-    ++currentIndex_;
+
+    if (currentSequenceIndex_ + 1 < currentSong().size()) {
+        ++currentSequenceIndex_;
+    } else {
+        ++currentSongIndex_;
+        currentSequenceIndex_ = 0;
+    }
 
     current().reset();
 
@@ -153,7 +207,7 @@ void SequencePool::advanceToNext()
 
 void SequencePool::advanceToPrevious()
 {
-    if (currentIndex_ == 0) {
+    if (!canAdvancePrevious()) {
         logger_.info("Already on first sequence.\n");
         return;
     }
@@ -161,7 +215,13 @@ void SequencePool::advanceToPrevious()
     current().allNotesOff();
 
     pendingSwitch_ = PendingSwitch::None;
-    --currentIndex_;
+
+    if (currentSequenceIndex_ > 0) {
+        --currentSequenceIndex_;
+    } else {
+        --currentSongIndex_;
+        currentSequenceIndex_ = currentSong().size() - 1;
+    }
 
     current().reset();
 
@@ -172,13 +232,21 @@ SequencePool SequencePool::createDefault(MidiInOut& midi, Logger& logger)
 {
     SequencePool pool(midi, logger);
 
-    pool.add(SequenceFactory::createSequenceOne(4));
-    /*pool.add(SequenceFactory::createSequenceTwo(4));
-    pool.add(SequenceFactory::createSequenceThree(4));
-    pool.add(SequenceFactory::createSequenceFour(4));
-    pool.add(SequenceFactory::createSequenceFive(4));
-    pool.add(SequenceFactory::createSequenceSix(4));
-    pool.add(SequenceFactory::createSequenceSeven(2));*/
+    Song intro("Intro");
+    intro.add(SequenceFactory::createSequenceOne(4));
+    intro.add(SequenceFactory::createSequenceTwo(4));
+    pool.add(std::move(intro));
+
+    Song mainSong("Main");
+    mainSong.add(SequenceFactory::createSequenceThree(4));
+    mainSong.add(SequenceFactory::createSequenceFour(4));
+    mainSong.add(SequenceFactory::createSequenceFive(4));
+    pool.add(std::move(mainSong));
+
+    Song outro("Outro");
+    outro.add(SequenceFactory::createSequenceSix(4));
+    outro.add(SequenceFactory::createSequenceSeven(2));
+    pool.add(std::move(outro));
 
     return pool;
 }

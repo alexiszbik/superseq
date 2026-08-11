@@ -3,26 +3,26 @@
 #include "Logger.h"
 #include "MidiInOut.h"
 #include "Sequence.h"
+#include "Song.h"
 
 #include <cstddef>
 #include <vector>
-
-struct Song { //???
-    const char* name_;
-    std::vector<Sequence> sequences_;
-};
 
 class SequencePool
 {
 public:
     SequencePool(MidiInOut& midi, Logger& logger);
 
-    void add(Sequence sequence);
+    void add(Song song);
 
-    std::size_t size() const noexcept { return sequences_.size(); }
-    std::size_t currentIndex() const noexcept { return currentIndex_; }
+    std::size_t songCount() const noexcept { return songs_.size(); }
+    std::size_t sequenceCount() const noexcept;
+    std::size_t currentSongIndex() const noexcept { return currentSongIndex_; }
+    std::size_t currentSequenceIndex() const noexcept { return currentSequenceIndex_; }
     bool hasPendingSwitch() const noexcept { return pendingSwitch_ != PendingSwitch::None; }
 
+    Song& currentSong();
+    const Song& currentSong() const;
     Sequence& current();
     const Sequence& current() const;
 
@@ -42,6 +42,8 @@ private:
         Previous
     };
 
+    bool canAdvanceNext() const;
+    bool canAdvancePrevious() const;
     void advanceToNext();
     void advanceToPrevious();
     void queueSwitch(PendingSwitch direction);
@@ -49,7 +51,8 @@ private:
 
     MidiInOut& midi_;
     Logger& logger_;
-    std::vector<Sequence> sequences_;
-    std::size_t currentIndex_ = 0;
+    std::vector<Song> songs_;
+    std::size_t currentSongIndex_ = 0;
+    std::size_t currentSequenceIndex_ = 0;
     PendingSwitch pendingSwitch_ = PendingSwitch::None;
 };

@@ -69,15 +69,18 @@ void printTracks(const Sequence& sequence, Logger& logger)
 
 void printPoolStatus(const SequencePool& pool, Logger& logger)
 {
-    char buffer[128];
+    char buffer[192];
     const Sequence& sequence = pool.current();
 
     std::snprintf(
         buffer,
         sizeof(buffer),
-        "Sequence %zu / %zu — %s\n",
-        pool.currentIndex() + 1,
-        pool.size(),
+        "Song %zu / %zu — %s — Sequence %zu / %zu — %s\n",
+        pool.currentSongIndex() + 1,
+        pool.songCount(),
+        pool.currentSong().name(),
+        pool.currentSequenceIndex() + 1,
+        pool.currentSong().size(),
         sequence.name());
     logger.info(buffer);
     printTracks(sequence, logger);
@@ -238,7 +241,12 @@ int main()
         });
 
         char buffer[64];
-        std::snprintf(buffer, sizeof(buffer), "Loaded %zu sequences\n", pool.size());
+        std::snprintf(
+            buffer,
+            sizeof(buffer),
+            "Loaded %zu songs (%zu sequences)\n",
+            pool.songCount(),
+            pool.sequenceCount());
         logger.info(buffer);
         printPoolStatus(pool, logger);
 
@@ -251,8 +259,11 @@ int main()
                 std::snprintf(
                     buffer,
                     sizeof(buffer),
-                    "[seq %zu %s | %s] ",
-                    pool.currentIndex() + 1,
+                    "[song %zu/%zu seq %zu/%zu %s | %s] ",
+                    pool.currentSongIndex() + 1,
+                    pool.songCount(),
+                    pool.currentSequenceIndex() + 1,
+                    pool.currentSong().size(),
                     pool.current().name(),
                     formatPlayhead(pool.current()).c_str());
                 logger.info(buffer);

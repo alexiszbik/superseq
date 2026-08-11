@@ -24,6 +24,7 @@ add_executable(ProtoSeq
     src/VirtualMidiSender.cpp
     src/engine/StringHelper.cpp
     src/engine/Sequence.cpp
+    src/engine/Song.cpp
     src/engine/SequencePool.cpp
     src/engine/SequenceTrack.cpp
     src/engine/factories/SequenceFactory.cpp
