@@ -4,6 +4,7 @@
 #include "StringHelper.h"
 #include "MidiInOut.h"
 #include "Note.h"
+#include "MuteEvent.h"
 #include "ProgramChange.h"
 #include "TimedEventList.h"
 #include "Tick.h"
@@ -41,6 +42,9 @@ public:
         tick_t tick,
         uint8_t program);
 
+    void addMuteEvent(
+        tick_t tick);
+
     void reset();
     void processTick(tick_t position, bool loopWrap);
     void releaseActiveNotes();
@@ -67,4 +71,5 @@ private:
     TimedEventList<Note> notes_;
     TimedEventList<ControlChange> controlChanges_;
     TimedEventList<ProgramChange> programChanges_;
+    TimedEventList<MuteEvent> muteEvents_;
 };

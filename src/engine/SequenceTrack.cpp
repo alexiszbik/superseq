@@ -22,12 +22,15 @@ void SequenceTrack::addNote(
     uint8_t velocity)
 {
     if (durationTicks == 0) {
-        throw std::invalid_argument("Invalid note timing");
+        return;
     }
+
+    /*
 
     if (!fitsInTickRange(static_cast<uint32_t>(startTick) + durationTicks)) {
         throw std::invalid_argument("Note exceeds maximum tick range");
     }
+    */
 
     notes_.add({ startTick, durationTicks, note, velocity });
 }
@@ -47,11 +50,18 @@ void SequenceTrack::addProgramChange(
     programChanges_.add({ tick, program });
 }
 
+void SequenceTrack::addMuteEvent(
+    tick_t tick)
+{
+    muteEvents_.add({ tick });
+}
+
 void SequenceTrack::reset()
 {
     notes_.reset();
     controlChanges_.reset();
     programChanges_.reset();
+    muteEvents_.reset();
     activeNotes_.clear();
     muted_ = startMuted_;
 }
@@ -69,6 +79,7 @@ void SequenceTrack::setMuted(bool muted)
         notes_.reset();
         controlChanges_.reset();
         programChanges_.reset();
+        muteEvents_.reset();
     }
 }
 
@@ -104,19 +115,26 @@ void SequenceTrack::releaseActiveNotes()
 
 void SequenceTrack::processTick(tick_t position, bool loopWrap)
 {
-    if (!muted_) {
-        programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {
-            midi_->sendProgramChange(channel_, change.program);
-        });
+    // we will just mute the notes, control changes & program changes will not be affected
+    // is this really what we want ?
 
-        controlChanges_.process(position, loopWrap, [this](const ControlChange& change) {
-            midi_->sendControlChange(channel_, change.controller, change.value);
-        });
+    programChanges_.process(position, loopWrap, [this](const ProgramChange& change) {
+        midi_->sendProgramChange(channel_, change.program);
+    });
 
-        notes_.process(position, loopWrap, [this](const Note& note) {
+    controlChanges_.process(position, loopWrap, [this](const ControlChange& change) {
+        midi_->sendControlChange(channel_, change.controller, change.value);
+    });
+
+    muteEvents_.process(position, loopWrap, [this](const MuteEvent& e) {
+        setMuted(true);
+    });
+
+    notes_.process(position, loopWrap, [this](const Note& note) {
+        if (!muted_) {
             startNote(note);
-        });
-    }
+        }
+    });
 
     tickActiveNotes();
 }

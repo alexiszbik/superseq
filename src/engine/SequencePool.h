@@ -7,6 +7,11 @@
 #include <cstddef>
 #include <vector>
 
+struct Song { //???
+    const char* name_;
+    std::vector<Sequence> sequences_;
+};
+
 class SequencePool
 {
 public:

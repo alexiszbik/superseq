@@ -121,6 +121,7 @@ void SequencePool::allNotesOff()
 
 void SequencePool::logCurrentSequenceSwitch()
 {
+    //Todo : maybe something to do here to not use alocal char buffer
     char buffer[128];
     std::snprintf(
         buffer,
@@ -172,12 +173,12 @@ SequencePool SequencePool::createDefault(MidiInOut& midi, Logger& logger)
     SequencePool pool(midi, logger);
 
     pool.add(SequenceFactory::createSequenceOne(4));
-    pool.add(SequenceFactory::createSequenceTwo(4));
+    /*pool.add(SequenceFactory::createSequenceTwo(4));
     pool.add(SequenceFactory::createSequenceThree(4));
     pool.add(SequenceFactory::createSequenceFour(4));
     pool.add(SequenceFactory::createSequenceFive(4));
     pool.add(SequenceFactory::createSequenceSix(4));
-    pool.add(SequenceFactory::createSequenceSeven(2));
+    pool.add(SequenceFactory::createSequenceSeven(2));*/
 
     return pool;
 }

@@ -181,7 +181,7 @@ SequenceTrack SequenceTrackFactory::createKickSnareWithHats(tick_t lengthInTicks
     drums.rate = 8;
     makeSequenceTrack(track, drums, lengthInTicks);
 
-    track.setStartMuted();
+    track.addMuteEvent(0);
 
     return track;
 }
